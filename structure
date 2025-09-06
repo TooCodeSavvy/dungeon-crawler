@@ -1,0 +1,38 @@
+dungeon-crawler/
+├── src/
+│   ├── Game/
+│   │   ├── Game.php
+│   │   ├── Player.php
+│   │   ├── Room.php
+│   │   ├── Monster.php
+│   │   ├── Treasure.php
+│   │   └── Dungeon.php
+│   ├── Interface/
+│   │   └── GameInterface.php
+│   └── Utils/
+│       └── SaveManager.php
+├── data/
+│   └── save.json
+├── index.php
+└── README.md
+
+
+# During development - quick checks
+composer check-fast
+
+# Before committing - full check
+composer check
+
+# Fix all issues automatically
+composer fix
+
+# Run specific test file
+composer test -- tests/Unit/Domain/ValueObject/HealthTest.php
+
+# Generate coverage report
+composer test-coverage
+open coverage/index.html  # macOS
+xdg-open coverage/index.html  # Linux
+
+# Start the game
+composer game

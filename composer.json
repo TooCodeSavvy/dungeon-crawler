@@ -1,0 +1,95 @@
+{
+    "name": "toocodesavvy/dungeon-crawler",
+    "description": "Text-based dungeon crawler game",
+    "type": "project",
+    "license": "GPL-3.0-or-later",
+    "require": {
+        "php": "^8.4",
+        "ext-json": "*",
+        "ext-mbstring": "*"
+    },
+    "require-dev": {
+        "squizlabs/php_codesniffer": "^3.13.4",
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^12.3",
+        "symfony/var-dumper": "^7.3",
+        "friendsofphp/php-cs-fixer": "^3.87"
+    },
+    "autoload": {
+        "psr-4": {
+            "Toocodesavvy\\DungeonCrawler\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-unit": "vendor/bin/phpunit --testsuite=Unit",
+        "test-integration": "vendor/bin/phpunit --testsuite=Integration",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage --coverage-clover coverage/clover.xml",
+        "test-coverage-text": "vendor/bin/phpunit --coverage-text",
+
+        "cs": "vendor/bin/phpcs --standard=PSR12 src tests",
+        "cs-fix": "vendor/bin/phpcbf --standard=PSR12 src tests",
+
+        "cs-fixer": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.php",
+        "cs-fixer-dry": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.php --dry-run --diff",
+
+        "phpstan": "vendor/bin/phpstan analyse",
+        "phpstan-baseline": "vendor/bin/phpstan analyse --generate-baseline",
+
+        "check": [
+            "@cs",
+            "@phpstan",
+            "@test"
+        ],
+        "check-fast": [
+            "@cs",
+            "@test-unit"
+        ],
+        "fix": [
+            "@cs-fix",
+            "@cs-fixer"
+        ],
+
+        "ci": [
+            "@composer validate --strict",
+            "@check"
+        ],
+
+        "game": "php src/Presentation/game.php",
+        "game-debug": "php -dxdebug.mode=debug src/Presentation/game.php"
+    },
+    "scripts-descriptions": {
+        "test": "Run all tests",
+        "test-unit": "Run unit tests only",
+        "test-integration": "Run integration tests only",
+        "test-coverage": "Generate HTML coverage report",
+        "test-coverage-text": "Display coverage in terminal",
+        "cs": "Check coding standards (PSR-12)",
+        "cs-fix": "Fix coding standards automatically",
+        "cs-fixer": "Run PHP CS Fixer",
+        "cs-fixer-dry": "Run PHP CS Fixer in dry-run mode",
+        "phpstan": "Run static analysis",
+        "phpstan-baseline": "Generate PHPStan baseline",
+        "check": "Run all quality checks",
+        "check-fast": "Run quick checks (no integration tests)",
+        "fix": "Fix all auto-fixable issues",
+        "ci": "Run CI pipeline checks",
+        "game": "Start the game",
+        "game-debug": "Start the game with debugging enabled"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "phpstan/extension-installer": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
