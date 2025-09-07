@@ -1,0 +1,42 @@
+#!/bin/bash
+
+echo "🔍 Running pre-commit checks..."
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# Check for debugging statements
+if grep -r -w -E "var_dump|print_r|die\(|dd\(" src/ tests/ --include="*.php" 2>/dev/null; then
+    echo -e "${RED}❌ Debugging statements found!${NC}"
+    echo "Please remove var_dump, print_r, die, or dd() before committing."
+    exit 1
+fi
+
+# Check PHP syntax
+echo "Checking PHP syntax..."
+for file in $(git diff --cached --name-only --diff-filter=ACM | grep '\.php$'); do
+    php -l "$file" > /dev/null
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}❌ PHP syntax error in $file${NC}"
+        exit 1
+    fi
+done
+
+# Run quick tests if available
+if [ -f "vendor/bin/phpunit" ]; then
+    echo "Running quick unit tests..."
+    composer test:unit --stop-on-failure
+    if [ $? -ne 0 ]; then
+        echo -e "${YELLOW}⚠️  Unit tests failed. Commit anyway? (y/n)${NC}"
+        read -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            exit 1
+        fi
+    fi
+fi
+
+echo -e "${GREEN}✅ Pre-commit checks passed!${NC}"
