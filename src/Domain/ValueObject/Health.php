@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DungeonCrawler\Domain\ValueObject;
+namespace DungeonCrawler\ValueObject\ValueObject;
 
 /**
  * Health value object representing an entity's health points

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Domain\ValueObject;
+namespace Tests\Unit\ValueObject\ValueObject;
 
-use DungeonCrawler\Domain\ValueObject\Health;
+use DungeonCrawler\ValueObject\ValueObject\Health;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -21,7 +21,7 @@ use PHPUnit\Framework\TestCase;
  * the life points of both players and monsters. These tests ensure
  * the reliability of combat and damage calculations.
  *
- * @covers     \DungeonCrawler\Domain\ValueObject\Health
+ * @covers     \DungeonCrawler\ValueObject\ValueObject\Health
  * @author     TooCodeSavvy
  */
 final class HealthTest extends TestCase
