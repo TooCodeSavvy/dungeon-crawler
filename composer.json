@@ -5,7 +5,8 @@
     "license": "GPL-3.0-or-later",
     "require": {
         "ext-json": "*",
-        "ext-mbstring": "*"
+        "ext-mbstring": "*",
+        "ramsey/uuid": "^4.9"
     },
     "require-dev": {
         "squizlabs/php_codesniffer": "^3.13.4",
