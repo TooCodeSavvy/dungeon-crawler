@@ -14,7 +14,7 @@ use Ramsey\Uuid\UuidInterface;
  * Supports taking damage, attacking with slight damage variance,
  * and factory methods to create common monster types.
  */
-final class Monster
+class Monster
 {
     /**
      * Unique identifier for the monster.
