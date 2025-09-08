@@ -4,7 +4,6 @@
     "type": "project",
     "license": "GPL-3.0-or-later",
     "require": {
-        "php": "^8.4",
         "ext-json": "*",
         "ext-mbstring": "*"
     },
@@ -17,7 +16,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Toocodesavvy\\DungeonCrawler\\": "src/"
+            "DungeonCrawler\\": "src/"
         }
     },
     "autoload-dev": {

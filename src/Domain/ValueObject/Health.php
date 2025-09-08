@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DungeonCrawler\ValueObject\ValueObject;
+namespace DungeonCrawler\Domain\ValueObject;
 
 /**
  * Health value object representing an entity's health points
@@ -10,7 +10,7 @@ namespace DungeonCrawler\ValueObject\ValueObject;
  * This is an immutable value object following DDD principles.
  * All methods that modify health return new instances rather than mutating state.
  *
- * @package    DungeonCrawler\ValueObject\ValueObject
+ * @package    DungeonCrawler\Domain\ValueObject
  * @author     TooCodeSavvy
  */
 final class Health

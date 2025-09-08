@@ -1,0 +1,33 @@
+#!/bin/bash
+
+commit_msg_file="$1"
+
+if [ -z "$commit_msg_file" ]; then
+    echo "❌ No commit message file specified!"
+    exit 1
+fi
+
+# Conventional commit format enforcement
+commit_regex='^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .{1,50}'
+
+if ! grep -qE "$commit_regex" "$commit_msg_file"; then
+    echo "❌ Invalid commit message format!"
+    echo ""
+    echo "📝 Format: <type>(<scope>): <subject>"
+    echo ""
+    echo "Types:"
+    echo "  feat     - New feature"
+    echo "  fix      - Bug fix"
+    echo "  docs     - Documentation"
+    echo "  style    - Code style changes"
+    echo "  refactor - Refactoring code"
+    echo "  test     - Adding tests"
+    echo "  chore    - Other chores"
+    echo "  perf     - Performance improvements"
+    echo "  ci       - CI/CD updates"
+    echo "  build    - Build-related changes"
+    echo "  revert   - Reverting a commit"
+    exit 1
+fi
+
+echo "✅ Commit message format is valid!"
