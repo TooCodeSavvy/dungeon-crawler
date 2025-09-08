@@ -28,7 +28,7 @@ done
 # Run quick tests if available
 if [ -f "vendor/bin/phpunit" ]; then
     echo "Running quick unit tests..."
-    composer test:unit --stop-on-failure
+    composer test-unit -- --stop-on-failure
     if [ $? -ne 0 ]; then
         echo -e "${YELLOW}⚠️  Unit tests failed. Commit anyway? (y/n)${NC}"
         read -n 1 -r
