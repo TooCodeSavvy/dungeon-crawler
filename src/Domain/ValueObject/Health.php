@@ -10,7 +10,7 @@ namespace DungeonCrawler\Domain\ValueObject;
  * This is an immutable value object following DDD principles.
  * All methods that modify health return new instances rather than mutating state.
  *
- * @package    DungeonCrawler\Domain\ValueObject
+ * @package    DungeonCrawler\ValueObject\ValueObject
  * @author     TooCodeSavvy
  */
 final class Health
