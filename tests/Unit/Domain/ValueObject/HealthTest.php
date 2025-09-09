@@ -22,8 +22,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
  * the life points of both players and monsters. These tests ensure
  * the reliability of combat and damage calculations.
  *
- * @covers     \DungeonCrawler\Domain\ValueObject\Health
- * @author     TooCodeSavvy
+ * @covers \DungeonCrawler\Domain\ValueObject\Health
  */
 final class HealthTest extends TestCase
 {
