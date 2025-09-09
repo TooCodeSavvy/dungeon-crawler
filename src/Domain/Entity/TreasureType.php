@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace DungeonCrawler\Domain\Entity;
@@ -23,7 +24,7 @@ enum TreasureType: string
      */
     public function getDisplayName(): string
     {
-        return match($this) {
+        return match ($this) {
             self::GOLD => 'Gold',
             self::HEALTH_POTION => 'Health Potion',
             self::WEAPON => 'Weapon',
@@ -38,7 +39,7 @@ enum TreasureType: string
      */
     public function getIcon(): string
     {
-        return match($this) {
+        return match ($this) {
             self::GOLD => '💰',
             self::HEALTH_POTION => '🧪',
             self::WEAPON => '⚔️',
@@ -55,7 +56,7 @@ enum TreasureType: string
      */
     public function getColor(): string
     {
-        return match($this) {
+        return match ($this) {
             self::GOLD => "\033[33m",           // Yellow
             self::HEALTH_POTION => "\033[31m",  // Red
             self::WEAPON => "\033[36m",         // Cyan

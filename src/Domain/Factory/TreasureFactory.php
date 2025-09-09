@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace DungeonCrawler\Domain\Factory;
@@ -73,7 +74,6 @@ final class TreasureFactory
     {
         // Chance of finding treasure increases with dungeon depth
         $treasureChance = min(60 + ($dungeonLevel * 5), 80);
-
         if (rand(1, 100) > $treasureChance) {
             return null; // No treasure in this room
         }
@@ -120,7 +120,6 @@ final class TreasureFactory
             ...self::TREASURE_DEFINITIONS['epic'],
             ...self::TREASURE_DEFINITIONS['legendary'],
         ];
-
         $definition = $bossTreasures[array_rand($bossTreasures)];
 
         return new Treasure(
@@ -144,7 +143,7 @@ final class TreasureFactory
     {
         $roll = rand(1, 100) + ($dungeonLevel * 2); // Higher levels shift probability
 
-        return match(true) {
+        return match (true) {
             $roll <= 40 => 'common',
             $roll <= 70 => 'uncommon',
             $roll <= 90 => 'rare',
@@ -162,7 +161,7 @@ final class TreasureFactory
      */
     private function generateDescription(TreasureType $type, string $name): string
     {
-        $descriptions = match($type) {
+        $descriptions = match ($type) {
             TreasureType::GOLD => [
                 'Gleaming in the torchlight.',
                 'Scattered across the cold stone floor.',
@@ -188,7 +187,6 @@ final class TreasureFactory
                 'Lost for centuries, spoken of only in legends.',
             ],
         };
-
         return sprintf('%s %s', $name, $descriptions[array_rand($descriptions)]);
     }
 

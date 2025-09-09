@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace DungeonCrawler\Domain\Entity;
@@ -63,13 +64,8 @@ class Monster
      *
      * @throws \InvalidArgumentException When validation fails for inputs.
      */
-    public function __construct(
-        string $name,
-        Health $health,
-        int $attackPower,
-        int $experienceReward = 10,
-        ?UuidInterface $id = null
-    ) {
+    public function __construct(string $name, Health $health, int $attackPower, int $experienceReward = 10, ?UuidInterface $id = null)
+    {
         if (empty($name)) {
             throw new \InvalidArgumentException('Monster name cannot be empty');
         }

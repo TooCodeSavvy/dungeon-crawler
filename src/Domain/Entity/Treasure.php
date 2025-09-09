@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace DungeonCrawler\Domain\Entity;
@@ -33,13 +34,8 @@ class Treasure
      *
      * @throws \InvalidArgumentException If name is empty or value is non-positive.
      */
-    public function __construct(
-        private readonly TreasureType $type,
-        private readonly string $name,
-        private readonly int $value,
-        private readonly string $description = '',
-        ?UuidInterface $id = null
-    ) {
+    public function __construct(private readonly TreasureType $type, private readonly string $name, private readonly int $value, private readonly string $description = '', ?UuidInterface $id = null)
+    {
         if (empty($name)) {
             throw new \InvalidArgumentException('Treasure name cannot be empty');
         }
@@ -58,7 +54,7 @@ class Treasure
      */
     public function applyTo(Player $player): string
     {
-        return match($this->type) {
+        return match ($this->type) {
             TreasureType::GOLD => $this->applyGold($player),
             TreasureType::HEALTH_POTION => $this->applyHealthPotion($player),
             TreasureType::WEAPON => $this->applyWeapon($player),
@@ -84,7 +80,6 @@ class Treasure
         $player->heal($this->value);
         $afterHealth = $player->getHealth()->getValue();
         $actualHealing = $afterHealth - $beforeHealth;
-
         if ($actualHealing > 0) {
             return sprintf(
                 'You drink the %s and restore %d health points! (Health: %d/%d)',
@@ -307,7 +302,7 @@ class Treasure
      */
     private function getRarity(): string
     {
-        return match(true) {
+        return match (true) {
             $this->value <= 15 => 'Common',
             $this->value <= 50 => 'Uncommon',
             $this->value <= 75 => 'Rare',

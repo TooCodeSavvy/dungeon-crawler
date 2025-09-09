@@ -16,7 +16,7 @@ use Ramsey\Uuid\UuidInterface;
  * and experience points. The player can move, attack, heal, take damage,
  * and gain experience from combat.
  */
-final class Player
+class Player
 {
     /**
      * Unique identifier for the player.
@@ -63,7 +63,7 @@ final class Player
     /**
      * Player constructor.
      *
-     * @param string $name Player name; must not be empty.
+     * @param string  $name Player name; must not be empty.
      * @param Health $health Player's initial health.
      * @param Position $position Starting position in the dungeon.
      * @param int $attackPower Player's base attack power; must be positive.

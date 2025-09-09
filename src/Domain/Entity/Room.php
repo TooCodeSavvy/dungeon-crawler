@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace DungeonCrawler\Domain\Entity;
@@ -84,14 +85,8 @@ final class Room
      * @param bool $isExit Whether this room is the dungeon exit.
      * @param UuidInterface|null $id Optional UUID; generated if null.
      */
-    public function __construct(
-        Position $position,
-        string $description = '',
-        ?Monster $monster = null,
-        ?Treasure $treasure = null,
-        bool $isExit = false,
-        ?UuidInterface $id = null
-    ) {
+    public function __construct(Position $position, string $description = '', ?Monster $monster = null, ?Treasure $treasure = null, bool $isExit = false, ?UuidInterface $id = null)
+    {
         $this->id = $id ?? Uuid::uuid4();
         $this->position = $position;
         $this->description = $description ?: $this->generateDescription();
@@ -181,7 +176,6 @@ final class Room
             'A circular room with mysterious symbols etched into the floor.',
             'A cold chamber with the sound of dripping water echoing.',
         ];
-
         return $descriptions[array_rand($descriptions)];
     }
 
