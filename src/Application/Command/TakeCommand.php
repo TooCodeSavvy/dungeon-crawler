@@ -6,21 +6,42 @@ namespace DungeonCrawler\Application\Command;
 use DungeonCrawler\Domain\Entity\Game;
 use DungeonCrawler\Domain\Entity\Treasure;
 
+/**
+ * Command to take one or more treasures from the current room.
+ *
+ * Supports taking a specific item by name/type or all available treasures.
+ * Applies immediate effects of treasures such as healing or weapon upgrades,
+ * updates player inventory and game score, and generates appropriate messages.
+ */
 final class TakeCommand implements CommandInterface
 {
+    /**
+     * @var string Name or alias of the item to take, or 'all' to take everything.
+     */
     private string $itemName;
 
+    /**
+     * Constructor.
+     *
+     * @param string $itemName Item name or alias to take, defaults to 'all'.
+     */
     public function __construct(string $itemName = 'all')
     {
         $this->itemName = strtolower(trim($itemName));
     }
 
+    /**
+     * Executes the take command.
+     *
+     * @param Game $game Current game instance.
+     * @return CommandResult Result object with success or failure and messages.
+     */
     public function execute(Game $game): CommandResult
     {
         $room = $game->getCurrentRoom();
         $player = $game->getPlayer();
 
-        // Check if there's any treasure in the room
+        // Check if there is any treasure available in the room
         if (!$room->hasTreasure()) {
             return CommandResult::failure("There's no treasure here to take.");
         }
@@ -29,25 +50,25 @@ final class TakeCommand implements CommandInterface
         $treasuresToTake = [];
         $messages = [];
 
-        // Determine which treasures to take
+        // Determine treasures to take: all or specific item
         if ($this->itemName === 'all' || $this->itemName === '') {
-            // Take all treasures
+            // Take all treasures and clear them from the room
             $treasuresToTake = $availableTreasures;
             $room->removeAllTreasures();
         } else {
-            // Try to find specific treasure
+            // Find a matching treasure by name/type/alias and remove it from the room
             $found = false;
             foreach ($availableTreasures as $key => $treasure) {
                 if ($this->matchesTreasure($treasure, $this->itemName)) {
                     $treasuresToTake[] = $treasure;
                     $room->removeTreasure($key);
                     $found = true;
-                    break; // Take only first matching item
+                    break; // Only take the first matching item
                 }
             }
 
             if (!$found) {
-                // List available items if not found
+                // Item not found, inform player with list of available items
                 $itemList = $this->formatAvailableItems($availableTreasures);
                 return CommandResult::failure(
                     sprintf(
@@ -59,16 +80,14 @@ final class TakeCommand implements CommandInterface
             }
         }
 
-        // Process each treasure
         $totalValue = 0;
         $totalHealth = 0;
         $weaponUpgrade = 0;
 
+        // Process effects and add treasures to inventory
         foreach ($treasuresToTake as $treasure) {
-            // Add to inventory
             $player->addToInventory($treasure);
 
-            // Apply immediate effects based on treasure type
             $effect = $this->applyTreasureEffect($treasure, $player);
 
             if ($effect['health'] > 0) {
@@ -92,17 +111,18 @@ final class TakeCommand implements CommandInterface
             $totalValue += $treasure->getValue();
         }
 
-        // Add score for collecting treasure
+        // Update game score with total treasure value
         $game->addScore($totalValue);
 
-        // Build success message
+        // Build the main success message about the treasures taken
         $mainMessage = $this->buildSuccessMessage($treasuresToTake, $totalValue);
 
+        // Append additional effect messages if any
         if (!empty($messages)) {
             $mainMessage .= "\n" . implode("\n", $messages);
         }
 
-        // Add inventory status if not too many items
+        // Show inventory summary if not too large
         if (count($player->getInventory()) <= 10) {
             $mainMessage .= $this->getInventoryStatus($player);
         }
@@ -110,37 +130,60 @@ final class TakeCommand implements CommandInterface
         return CommandResult::success($mainMessage);
     }
 
+    /**
+     * Determines if the command can currently be executed.
+     *
+     * @param Game $game Current game instance.
+     * @return bool True if player is alive and not in combat.
+     */
     public function canExecute(Game $game): bool
     {
-        // Can take items as long as player is alive and not in active combat
         return $game->getPlayer()->isAlive() && !$game->isInCombat();
     }
 
+    /**
+     * Returns the command name.
+     *
+     * @return string Command name.
+     */
     public function getName(): string
     {
         return 'take';
     }
 
+    /**
+     * Checks if the given treasure matches the requested item name or alias.
+     *
+     * @param Treasure $treasure Treasure to check.
+     * @param string $itemName Lowercased item name or alias to match.
+     * @return bool True if matches, false otherwise.
+     */
     private function matchesTreasure(Treasure $treasure, string $itemName): bool
     {
         $treasureName = strtolower($treasure->getName());
         $treasureType = strtolower($treasure->getType()->value);
 
-        // Check exact match first
+        // Exact match on name or type
         if ($treasureName === $itemName || $treasureType === $itemName) {
             return true;
         }
 
-        // Check partial match
+        // Partial match in name
         if (str_contains($treasureName, $itemName)) {
             return true;
         }
 
-        // Check common aliases
+        // Check against common aliases for treasure types
         $aliases = $this->getItemAliases($treasure);
         return in_array($itemName, $aliases, true);
     }
 
+    /**
+     * Returns common aliases for treasure types.
+     *
+     * @param Treasure $treasure Treasure to get aliases for.
+     * @return array List of alias strings.
+     */
     private function getItemAliases(Treasure $treasure): array
     {
         $type = $treasure->getType()->value;
@@ -154,20 +197,27 @@ final class TakeCommand implements CommandInterface
         };
     }
 
+    /**
+     * Applies immediate effects of a treasure to the player.
+     *
+     * @param Treasure $treasure Treasure whose effect to apply.
+     * @param \DungeonCrawler\Domain\Entity\Player $player Player to apply effects on.
+     * @return array Associative array with 'health' and 'attack' keys indicating effect magnitudes.
+     */
     private function applyTreasureEffect(Treasure $treasure, \DungeonCrawler\Domain\Entity\Player $player): array
     {
         $effect = ['health' => 0, 'attack' => 0];
 
         switch ($treasure->getType()->value) {
             case 'Health Potion':
-                // Immediate healing effect
+                // Heal player immediately
                 $healAmount = $this->calculateHealAmount($treasure->getValue());
                 $player->heal($healAmount);
                 $effect['health'] = $healAmount;
                 break;
 
             case 'Weapon':
-                // Permanent attack boost
+                // Increase player's attack power permanently
                 $attackBoost = $this->calculateAttackBoost($treasure->getValue());
                 $player->increaseAttackPower($attackBoost);
                 $effect['attack'] = $attackBoost;
@@ -175,25 +225,41 @@ final class TakeCommand implements CommandInterface
 
             case 'Gold':
             case 'Artifact':
-                // These provide score only, no immediate effect
+                // No immediate effect; score added separately
                 break;
         }
 
         return $effect;
     }
 
+    /**
+     * Calculates healing amount from treasure value.
+     *
+     * @param int $treasureValue Treasure's numeric value.
+     * @return int Amount of health restored.
+     */
     private function calculateHealAmount(int $treasureValue): int
     {
-        // Heal amount based on treasure value
         return min(50, max(10, (int)($treasureValue / 2)));
     }
 
+    /**
+     * Calculates attack boost amount from treasure value.
+     *
+     * @param int $treasureValue Treasure's numeric value.
+     * @return int Attack power increase amount.
+     */
     private function calculateAttackBoost(int $treasureValue): int
     {
-        // Attack boost based on treasure value
         return min(10, max(2, (int)($treasureValue / 10)));
     }
 
+    /**
+     * Formats available treasures into a readable string.
+     *
+     * @param Treasure[] $treasures List of treasures.
+     * @return string Formatted list of items with icons.
+     */
     private function formatAvailableItems(array $treasures): string
     {
         if (empty($treasures)) {
@@ -208,6 +274,13 @@ final class TakeCommand implements CommandInterface
         return implode(', ', $items);
     }
 
+    /**
+     * Builds a success message describing the treasures taken.
+     *
+     * @param Treasure[] $treasures Treasures taken.
+     * @param int $totalValue Total value of taken treasures.
+     * @return string Success message.
+     */
     private function buildSuccessMessage(array $treasures, int $totalValue): string
     {
         $count = count($treasures);
@@ -237,6 +310,12 @@ final class TakeCommand implements CommandInterface
         );
     }
 
+    /**
+     * Returns a summary of the player's current inventory.
+     *
+     * @param \DungeonCrawler\Domain\Entity\Player $player Player whose inventory to summarize.
+     * @return string Inventory summary message.
+     */
     private function getInventoryStatus(\DungeonCrawler\Domain\Entity\Player $player): string
     {
         $inventory = $player->getInventory();
@@ -275,6 +354,11 @@ final class TakeCommand implements CommandInterface
         return implode("\n", $status);
     }
 
+    /**
+     * Returns the requested item name or alias.
+     *
+     * @return string Item name.
+     */
     public function getItemName(): string
     {
         return $this->itemName;

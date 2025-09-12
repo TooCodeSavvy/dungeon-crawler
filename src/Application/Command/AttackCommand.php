@@ -4,21 +4,46 @@ declare(strict_types=1);
 namespace DungeonCrawler\Application\Command;
 
 use DungeonCrawler\Domain\Entity\Game;
+use DungeonCrawler\Domain\Entity\Player;
+use DungeonCrawler\Domain\Entity\Monster;
+use DungeonCrawler\Domain\Entity\Treasure;
+use DungeonCrawler\Domain\Factory\TreasureFactory;
 
+/**
+ * Class AttackCommand
+ *
+ * Represents a command to attack a monster in the current room.
+ * Handles attack logic including damage calculation, monster counter-attacks,
+ * scoring, and potential treasure drops.
+ */
 class AttackCommand implements CommandInterface
 {
+    /**
+     * @var string|null Name of the target to attack, optional.
+     */
     private ?string $target;
 
+    /**
+     * Constructor.
+     *
+     * @param string|null $target Optional name of the target monster.
+     */
     public function __construct(?string $target = null)
     {
         $this->target = $target;
     }
 
+    /**
+     * Executes the attack command.
+     *
+     * @param Game $game The current game state.
+     * @return CommandResult Result of the attack action.
+     */
     public function execute(Game $game): CommandResult
     {
         $room = $game->getCurrentRoom();
 
-        // Check if there's a monster in the room
+        // Check if there's a monster present to attack
         if (!$room->hasMonster()) {
             return CommandResult::failure("There's nothing to attack here!");
         }
@@ -26,17 +51,18 @@ class AttackCommand implements CommandInterface
         $monster = $room->getMonster();
         $player = $game->getPlayer();
 
-        // Validate target if specified
+        // Validate the target if specified and ensure it matches the monster
         if ($this->target !== null && !$this->isValidTarget($this->target, $monster->getName())) {
             return CommandResult::failure(
-                sprintf("Cannot attack '%s'. The %s is your only target.",
+                sprintf(
+                    "Cannot attack '%s'. The %s is your only target.",
                     $this->target,
                     $monster->getName()
                 )
             );
         }
 
-        // Perform the attack
+        // Calculate and apply player's attack damage
         $playerDamage = $this->calculateDamage($player->getAttackPower());
         $monster->takeDamage($playerDamage);
 
@@ -47,12 +73,12 @@ class AttackCommand implements CommandInterface
             $playerDamage
         );
 
-        // Check if monster is defeated
+        // If monster is defeated, handle victory logic
         if (!$monster->isAlive()) {
             $room->removeMonster();
             $game->endCombat();
 
-            // Award points based on monster difficulty
+            // Calculate and award score points
             $points = $this->calculatePoints($monster);
             $game->addScore($points);
 
@@ -62,7 +88,7 @@ class AttackCommand implements CommandInterface
                 $points
             );
 
-            // Check for treasure drop
+            // Possibly drop treasure
             if ($this->shouldDropTreasure()) {
                 $treasure = $this->generateTreasureDrop($monster);
                 $room->addTreasure($treasure);
@@ -86,90 +112,139 @@ class AttackCommand implements CommandInterface
             $monsterDamage
         );
 
-        // Add health status
+        // Append health status bars for both player and monster
         $messages[] = $this->getHealthStatus($player, $monster);
 
-        // Check if player died
+        // If player died, return failure result
         if (!$player->isAlive()) {
             $messages[] = "💔 You have been defeated...";
             return CommandResult::failure(implode("\n", $messages));
         }
 
+        // Return success with the combat messages
         return CommandResult::success(implode("\n", $messages));
     }
 
+    /**
+     * Checks whether this command can be executed in the current game state.
+     *
+     * @param Game $game The current game state.
+     * @return bool True if the player is alive and there is a monster to attack.
+     */
     public function canExecute(Game $game): bool
     {
-        // Can only attack during combat or when monster is present
         return $game->getPlayer()->isAlive() &&
             $game->getCurrentRoom()->hasMonster();
     }
 
+    /**
+     * Returns the command name.
+     *
+     * @return string The name of this command.
+     */
     public function getName(): string
     {
         return 'attack';
     }
 
+    /**
+     * Validates if the given target name matches the monster's name.
+     *
+     * Allows partial matching and generic names such as "monster" or "enemy".
+     *
+     * @param string $target The target name input.
+     * @param string $monsterName The monster's actual name.
+     * @return bool True if the target is valid.
+     */
     private function isValidTarget(string $target, string $monsterName): bool
     {
         $normalizedTarget = strtolower(trim($target));
         $normalizedMonster = strtolower($monsterName);
 
-        // Allow partial matching
         return str_contains($normalizedMonster, $normalizedTarget) ||
             $normalizedTarget === 'monster' ||
             $normalizedTarget === 'enemy';
     }
 
+    /**
+     * Calculates damage dealt given a base attack power.
+     *
+     * Damage varies between 80% and 120% of base, with a 10% chance of critical hit (x1.5).
+     *
+     * @param int $baseDamage The base attack power.
+     * @return int The calculated damage (minimum 1).
+     */
     private function calculateDamage(int $baseDamage): int
     {
-        // Add some randomness to damage (80% to 120% of base)
         $variance = (int)($baseDamage * 0.2);
         $damage = rand($baseDamage - $variance, $baseDamage + $variance);
 
-        // Critical hit chance (10%)
+        // 10% chance for critical hit
         if (rand(1, 100) <= 10) {
             $damage = (int)($damage * 1.5);
         }
 
-        return max(1, $damage); // Ensure at least 1 damage
+        return max(1, $damage);
     }
 
-    private function calculatePoints(\DungeonCrawler\Domain\Entity\Monster $monster): int
+    /**
+     * Calculates points awarded for defeating a monster.
+     *
+     * Points are based on monster's max health and attack power.
+     *
+     * @param Monster $monster The defeated monster.
+     * @return int The score points awarded.
+     */
+    private function calculatePoints(Monster $monster): int
     {
-        // Base points based on monster's max health
         $basePoints = $monster->getHealth()->getMax() * 2;
-
-        // Bonus for attack power
         $bonusPoints = $monster->getAttackPower() * 3;
 
         return $basePoints + $bonusPoints;
     }
 
+    /**
+     * Determines whether treasure should be dropped.
+     *
+     * 30% chance to drop treasure.
+     *
+     * @return bool True if treasure drops.
+     */
     private function shouldDropTreasure(): bool
     {
-        // 30% chance to drop treasure
         return rand(1, 100) <= 30;
     }
 
-    private function generateTreasureDrop(\DungeonCrawler\Domain\Entity\Monster $monster): \DungeonCrawler\Domain\Entity\Treasure
+    /**
+     * Generates a treasure drop based on monster difficulty.
+     *
+     * Stronger monsters drop rarer treasure.
+     *
+     * @param Monster $monster The defeated monster.
+     * @return Treasure The generated treasure.
+     */
+    private function generateTreasureDrop(Monster $monster): Treasure
     {
-        $factory = new \DungeonCrawler\Domain\Factory\TreasureFactory();
+        $factory = new TreasureFactory();
 
-        // Stronger monsters drop better treasure
-        $rarity = match(true) {
+        $rarity = match (true) {
             $monster->getHealth()->getMax() >= 100 => 'rare',
-            $monster->getHealth()->getMax() >= 50 => 'uncommon',
-            default => 'common'
+            $monster->getHealth()->getMax() >= 50  => 'uncommon',
+            default                                => 'common',
         };
 
         return $factory->createRandom($rarity);
     }
 
-    private function getHealthStatus(
-        \DungeonCrawler\Domain\Entity\Player $player,
-        \DungeonCrawler\Domain\Entity\Monster $monster
-    ): string {
+    /**
+     * Creates a formatted health status string for player and monster.
+     *
+     * @param Player $player The player entity.
+     * @param Monster $monster The monster entity.
+     * @return string The formatted health status message.
+     */
+    private function getHealthStatus(Player $player, Monster $monster): string
+    {
         $playerHealth = $player->getHealth();
         $monsterHealth = $monster->getHealth();
 
@@ -195,6 +270,13 @@ class AttackCommand implements CommandInterface
         );
     }
 
+    /**
+     * Creates a visual health bar string using block characters.
+     *
+     * @param int $current Current health points.
+     * @param int $max Maximum health points.
+     * @return string Visual health bar.
+     */
     private function createHealthBar(int $current, int $max): string
     {
         $percentage = ($current / $max) * 100;
@@ -204,6 +286,11 @@ class AttackCommand implements CommandInterface
         return '[' . str_repeat('█', $filled) . str_repeat('░', $bars - $filled) . ']';
     }
 
+    /**
+     * Returns the attack target name if specified.
+     *
+     * @return string|null The target name or null if none specified.
+     */
     public function getTarget(): ?string
     {
         return $this->target;

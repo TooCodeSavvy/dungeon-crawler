@@ -5,20 +5,31 @@ namespace DungeonCrawler\Application\Command;
 
 use DungeonCrawler\Domain\Entity\Game;
 
+/**
+ * Interface for commands that can be executed within the game.
+ */
 interface CommandInterface
 {
     /**
-     * Execute the command
+     * Executes the command logic.
+     *
+     * @param Game $game The current game instance.
+     * @return CommandResult The result of command execution.
      */
     public function execute(Game $game): CommandResult;
 
     /**
-     * Check if the command can be executed in the current game state
+     * Determines if the command is currently allowed to be executed.
+     *
+     * @param Game $game The current game instance.
+     * @return bool True if the command can be executed, false otherwise.
      */
     public function canExecute(Game $game): bool;
 
     /**
-     * Get the command name for logging/debugging
+     * Gets the name of the command.
+     *
+     * @return string The command name.
      */
     public function getName(): string;
 }

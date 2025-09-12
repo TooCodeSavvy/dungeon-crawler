@@ -12,15 +12,24 @@ use DungeonCrawler\Infrastructure\Console\ConsoleRenderer;
 use DungeonCrawler\Infrastructure\Console\InputParser;
 use DungeonCrawler\Infrastructure\Persistence\JsonGameRepository;
 
-final class ConsoleGame
+/**
+ * ConsoleGame handles wiring and running the console-based DungeonCrawler game.
+ */
+class ConsoleGame
 {
     private GameEngine $engine;
 
+    /**
+     * ConsoleGame constructor.
+     */
     public function __construct()
     {
         $this->bootstrap();
     }
 
+    /**
+     * Bootstraps services, infrastructure, command handler, and game engine.
+     */
     private function bootstrap(): void
     {
         // Initialize services
@@ -44,6 +53,9 @@ final class ConsoleGame
         );
     }
 
+    /**
+     * Starts the game loop.
+     */
     public function start(): void
     {
         $this->engine->run();

@@ -5,17 +5,30 @@ namespace DungeonCrawler\Infrastructure\Persistence;
 
 use DungeonCrawler\Domain\Entity\Game;
 
+/**
+ * Repository for saving and loading Game entities as JSON files.
+ *
+ * Saves are stored under the `data/saves/` directory relative to the project.
+ */
 final class JsonGameRepository implements GameRepositoryInterface
 {
     private const SAVE_DIR = __DIR__ . '/../../../data/saves/';
 
     public function __construct()
     {
+        // Ensure save directory exists, create if not
         if (!is_dir(self::SAVE_DIR)) {
             mkdir(self::SAVE_DIR, 0777, true);
         }
     }
 
+    /**
+     * Saves the given Game entity as a JSON file.
+     *
+     * @param Game $game The game to save
+     * @return string The generated save ID
+     * @throws \RuntimeException If saving fails
+     */
     public function save(Game $game): string
     {
         $saveId = uniqid('save_', true);
@@ -30,6 +43,13 @@ final class JsonGameRepository implements GameRepositoryInterface
         return $saveId;
     }
 
+    /**
+     * Loads a saved Game entity from a JSON file by save ID.
+     *
+     * @param string $saveId The save identifier
+     * @return Game The reconstructed Game entity
+     * @throws \RuntimeException If loading or parsing fails
+     */
     public function load(string $saveId): Game
     {
         $filename = self::SAVE_DIR . $saveId . '.json';
@@ -51,6 +71,11 @@ final class JsonGameRepository implements GameRepositoryInterface
         return $this->deserialize($data);
     }
 
+    /**
+     * Lists all saved games metadata sorted by most recent save.
+     *
+     * @return array<int, array{id: string, player_name: string, turn: int, saved_at: int}>
+     */
     public function listSaves(): array
     {
         $saves = [];
@@ -68,11 +93,18 @@ final class JsonGameRepository implements GameRepositoryInterface
             ];
         }
 
+        // Sort descending by saved_at timestamp
         usort($saves, fn($a, $b) => $b['saved_at'] <=> $a['saved_at']);
 
         return $saves;
     }
 
+    /**
+     * Deletes a saved game file by save ID.
+     *
+     * @param string $saveId The save identifier
+     * @throws \RuntimeException If deletion fails
+     */
     public function delete(string $saveId): void
     {
         $filename = self::SAVE_DIR . $saveId . '.json';
@@ -84,6 +116,12 @@ final class JsonGameRepository implements GameRepositoryInterface
         }
     }
 
+    /**
+     * Serializes a Game entity into an array suitable for JSON encoding.
+     *
+     * @param Game $game
+     * @return array<string, mixed>
+     */
     private function serialize(Game $game): array
     {
         return [
@@ -98,18 +136,30 @@ final class JsonGameRepository implements GameRepositoryInterface
             'current_position' => [
                 'x' => $game->getCurrentPosition()->getX(),
                 'y' => $game->getCurrentPosition()->getY()
-            ]
+            ],
         ];
     }
 
+    /**
+     * Deserializes an array into a Game entity.
+     *
+     * @param array<string, mixed> $data
+     * @return Game
+     *
+     * @throws \RuntimeException Currently not implemented
+     */
     private function deserialize(array $data): Game
     {
-        // Reconstruct the game from saved data
-        // This would involve recreating all entities from their serialized form
-        // Implementation details would depend on your entity constructors
+        // TODO: Implement actual deserialization of all entities here
         throw new \RuntimeException("Deserialization not yet implemented");
     }
 
+    /**
+     * Serializes the Player entity into an array.
+     *
+     * @param mixed $player Player entity instance
+     * @return array<string, mixed>
+     */
     private function serializePlayer($player): array
     {
         return [
@@ -126,9 +176,14 @@ final class JsonGameRepository implements GameRepositoryInterface
         ];
     }
 
+    /**
+     * Serializes the Dungeon entity into an array.
+     *
+     * @param mixed $dungeon Dungeon entity instance
+     * @return array<string, mixed>
+     */
     private function serializeDungeon($dungeon): array
     {
-        // Serialize dungeon structure
         return [
             'size' => $dungeon->getSize(),
             'rooms' => array_map(
@@ -138,6 +193,12 @@ final class JsonGameRepository implements GameRepositoryInterface
         ];
     }
 
+    /**
+     * Serializes a Room entity into an array.
+     *
+     * @param mixed $room Room entity instance
+     * @return array<string, mixed>
+     */
     private function serializeRoom($room): array
     {
         return [
@@ -151,10 +212,16 @@ final class JsonGameRepository implements GameRepositoryInterface
             'treasures' => array_map(
                 fn($t) => $this->serializeTreasure($t),
                 $room->getTreasures()
-            )
+            ),
         ];
     }
 
+    /**
+     * Serializes a Monster entity into an array.
+     *
+     * @param mixed $monster Monster entity instance
+     * @return array<string, mixed>
+     */
     private function serializeMonster($monster): array
     {
         return [
@@ -167,6 +234,12 @@ final class JsonGameRepository implements GameRepositoryInterface
         ];
     }
 
+    /**
+     * Serializes a Treasure entity into an array.
+     *
+     * @param mixed $treasure Treasure entity instance
+     * @return array<string, mixed>
+     */
     private function serializeTreasure($treasure): array
     {
         return [

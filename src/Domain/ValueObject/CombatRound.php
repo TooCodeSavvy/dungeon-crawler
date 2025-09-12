@@ -6,7 +6,7 @@ namespace DungeonCrawler\Domain\ValueObject;
 /**
  * Value object representing a complete combat round with multiple actions.
  */
-final class CombatRound
+class CombatRound
 {
     /**
      * @param array<CombatResult> $actions All combat actions in this round
