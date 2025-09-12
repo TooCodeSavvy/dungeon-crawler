@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace DungeonCrawler\Domain\ValueObject;
 
-use DungeonCrawler\Domain\ValueObject\Direction;
-
 /**
  * Represents a position on a 2D grid within the dungeon crawler game.
  *
