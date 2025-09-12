@@ -107,15 +107,30 @@ class GameEngine
      */
     private function executeCommand(CommandInterface $command): void
     {
-        // Process the command, passing current game instance (can be null)
+        // For StartGameCommand and LoadGameCommand, you can create/load the game first
+        if ($command instanceof StartGameCommand) {
+            $this->startNewGame($command->getPlayerName(), $command->getDifficulty());
+            $this->renderer->renderSuccess("New game started for " . $command->getPlayerName());
+            return;
+        }
+
+        if ($command instanceof LoadGameCommand) {
+            $this->loadGame($command->getSaveId());
+            $this->renderer->renderSuccess("Game loaded.");
+            return;
+        }
+
+        // Now that a game instance exists, you can safely pass it to the handler
+        if ($this->game === null) {
+            throw new \RuntimeException("No active game to execute this command.");
+        }
+
         $result = $this->commandHandler->handle($command, $this->game);
 
-        // Render any message returned by the command result
         if ($result->hasMessage()) {
             $this->renderer->renderMessage($result->getMessage());
         }
 
-        // If the command signals a state change, transition accordingly
         if ($result->requiresStateChange()) {
             $this->transitionTo($result->getNewState());
         }

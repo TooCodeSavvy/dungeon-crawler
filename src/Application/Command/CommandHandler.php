@@ -58,10 +58,10 @@ class CommandHandler
      * Validates if the command is known and if it can be executed in the current game state.
      *
      * @param CommandInterface $command The command to handle.
-     * @param Game $game The current game state.
+     * @param ?Game $game The current game state.
      * @return CommandResult Result of command execution.
      */
-    public function handle(CommandInterface $command, Game $game): CommandResult
+    public function handle(CommandInterface $command, ?Game $game): CommandResult
     {
         $commandClass = get_class($command);
 
