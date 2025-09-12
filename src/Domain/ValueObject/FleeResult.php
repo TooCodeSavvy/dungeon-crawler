@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace DungeonCrawler\Domain\Service;
+namespace DungeonCrawler\Domain\ValueObject;
 
 /**
  * Value object representing the outcome of a flee attempt during combat.

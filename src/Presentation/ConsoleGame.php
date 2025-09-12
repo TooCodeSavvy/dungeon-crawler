@@ -6,6 +6,7 @@ namespace DungeonCrawler\Presentation;
 
 use DungeonCrawler\Application\GameEngine;
 use DungeonCrawler\Application\Command\CommandHandler;
+use DungeonCrawler\Application\GameStateFactory;
 use DungeonCrawler\Domain\Service\CombatService;
 use DungeonCrawler\Domain\Service\MovementService;
 use DungeonCrawler\Infrastructure\Console\ConsoleRenderer;
@@ -17,6 +18,11 @@ use DungeonCrawler\Infrastructure\Persistence\JsonGameRepository;
  */
 class ConsoleGame
 {
+    /**
+     * The main game engine responsible for game logic and state management.
+     *
+     * @var GameEngine
+     */
     private GameEngine $engine;
 
     /**
@@ -44,12 +50,16 @@ class ConsoleGame
         // Initialize command handler
         $commandHandler = new CommandHandler($movementService, $combatService);
 
+        // Initialize state factory
+        $stateFactory = new GameStateFactory();
+
         // Initialize game engine
         $this->engine = new GameEngine(
             $commandHandler,
             $renderer,
             $inputParser,
-            $repository
+            $repository,
+            $stateFactory
         );
     }
 

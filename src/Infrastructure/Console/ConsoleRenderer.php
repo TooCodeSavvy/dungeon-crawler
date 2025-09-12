@@ -194,4 +194,15 @@ final class ConsoleRenderer
     {
         echo str_repeat("═", 45) . "\n";
     }
+
+    /**
+     * Renders a single line of text followed by a newline.
+     *
+     * @param string $text The text to render.
+     */
+    public function renderLine(string $text): void
+    {
+        echo $text . PHP_EOL;
+    }
+
 }

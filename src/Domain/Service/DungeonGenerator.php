@@ -38,7 +38,7 @@ class DungeonGenerator
      * Temporary storage of rooms during the generation process.
      * Indexed by position string format "[x,y]" for O(1) lookup.
      *
-     * @var array<string, Room>
+     *  @var array<string, Room>
      */
     private array $rooms = [];
 
@@ -125,7 +125,7 @@ class DungeonGenerator
     }
 
     /**
-     * Generates a simple 3x3 pre-designed dungeon for testing or tutorials.
+     * Generates a simple 3x3 pre-designed dungeon
      *
      * Layout:
      * [S]---[M]---[.]

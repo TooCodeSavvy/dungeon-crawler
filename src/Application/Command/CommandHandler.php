@@ -14,7 +14,7 @@ use DungeonCrawler\Domain\Service\MovementService;
  * It maps specific command classes to their respective handlers,
  * validates command execution eligibility, and manages command results.
  */
-final class CommandHandler
+class CommandHandler
 {
     /**
      * @var array<class-string, callable(CommandInterface, Game): CommandResult>

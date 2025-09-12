@@ -1,9 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace DungeonCrawler\Domain\Service;
-
-use DungeonCrawler\Domain\ValueObject\Health;
+namespace DungeonCrawler\Domain\ValueObject;
 
 /**
  * Value object encapsulating the key combat statistics for the player and monster.

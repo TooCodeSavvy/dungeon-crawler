@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace DungeonCrawler\Infrastructure\Persistence;
 
 use DungeonCrawler\Domain\Entity\Game;
+use DungeonCrawler\Domain\Repository\GameRepositoryInterface;
 
 /**
  * Repository for saving and loading Game entities as JSON files.

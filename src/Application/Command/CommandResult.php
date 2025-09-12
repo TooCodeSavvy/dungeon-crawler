@@ -6,14 +6,14 @@ namespace DungeonCrawler\Application\Command;
 /**
  * Represents the outcome of executing a command.
  */
-final class CommandResult
+class CommandResult
 {
     /**
      * @param bool $success Whether the command succeeded.
      * @param string $message A human-readable message about the result.
      * @param array $data Optional additional data related to the result.
      */
-    private function __construct(
+    function __construct(
         private readonly bool $success,
         private readonly string $message,
         private readonly array $data = []
