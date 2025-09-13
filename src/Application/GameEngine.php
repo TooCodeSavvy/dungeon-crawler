@@ -6,6 +6,7 @@ namespace DungeonCrawler\Application;
 use DungeonCrawler\Application\Command\CommandInterface;
 use DungeonCrawler\Application\Command\CommandHandler;
 use DungeonCrawler\Application\Command\LoadGameCommand;
+use DungeonCrawler\Application\Command\QuitCommand;
 use DungeonCrawler\Application\Command\StartGameCommand;
 use DungeonCrawler\Application\State\GameStateInterface;
 use DungeonCrawler\Domain\Entity\Game;
@@ -109,7 +110,8 @@ class GameEngine
      */
     private function executeCommand(CommandInterface $command): void
     {
-        // For StartGameCommand and LoadGameCommand, you can create/load the game first
+        // Special handling for commands that don't require an active game
+        // or that might create/load a game
         if ($command instanceof StartGameCommand) {
             $this->startNewGame($command->getPlayerName(), $command->getDifficulty());
             $this->renderer->renderSuccess("New game started for " . $command->getPlayerName());
@@ -122,11 +124,29 @@ class GameEngine
             return;
         }
 
-        // Now that a game instance exists, you can safely pass it to the handler
+        if ($command instanceof QuitCommand) {
+
+            // Execute the quit command regardless of game state
+            $result = $this->commandHandler->handle($command, $this->game);
+
+            if ($result->hasMessage()) {
+                $this->renderer->renderMessage($result->getMessage());
+            }
+
+            // Set game to null to ensure we're completely resetting
+            $this->game = null;
+
+            // Always transition to menu state on quit
+            $this->transitionTo($this->stateFactory->createMenuState($this));
+
+            return;
+        }
+        // For all other commands that require an active game
         if ($this->game === null) {
             throw new \RuntimeException("No active game to execute this command.");
         }
 
+        // Execute the command with the current game
         $result = $this->commandHandler->handle($command, $this->game);
 
         if ($result->hasMessage()) {

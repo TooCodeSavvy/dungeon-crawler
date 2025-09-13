@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace DungeonCrawler\Application\State;
 
 use DungeonCrawler\Application\Command\CommandInterface;
+use DungeonCrawler\Application\Command\DebugCommand;
 use DungeonCrawler\Application\Command\MoveCommand;
 use DungeonCrawler\Application\Command\AttackCommand;
 use DungeonCrawler\Application\Command\TakeCommand;
@@ -81,9 +82,9 @@ class PlayingState implements GameStateInterface
     {
         $parsed = $parser->parse($input);
 
-        // Debug the parsed input
-        if ($parsed['command'] === 'move' || $parsed['command'] === 'go') {
-            echo "DEBUG: Direction parsed: '" . ($parsed['direction'] ?? 'null') . "'\n";
+        // Check for direct 'quit' command
+        if (strtolower(trim($input)) === 'quit') {
+            return new QuitCommand();
         }
 
         return match ($parsed['command']) {

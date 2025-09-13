@@ -37,11 +37,8 @@ class MenuState implements GameStateInterface
     public function parseInput(string $input, InputParser $parser): ?CommandInterface
     {
         $input = trim($input);
-
         switch ($input) {
             case '1':
-                // For starting a new game, you might want to get player name and difficulty.
-                // For simplicity, let's assume defaults or get them later.
                 return new StartGameCommand('Player', 'normal');
 
             case '2':
@@ -52,7 +49,9 @@ class MenuState implements GameStateInterface
                 return null;
 
             case '3':
-                return new QuitCommand();
+                // Directly call engine's quit method instead of using a command
+                $this->engine->quit();
+                return null;
 
             default:
                 // Invalid input returns null
