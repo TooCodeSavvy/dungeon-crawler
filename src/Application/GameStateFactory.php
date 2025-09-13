@@ -1,18 +1,30 @@
 <?php
-
 declare(strict_types=1);
-
 namespace DungeonCrawler\Application;
 
 use DungeonCrawler\Application\State\GameStateInterface;
 use DungeonCrawler\Application\State\MenuState;
 use DungeonCrawler\Application\State\PlayingState;
+use DungeonCrawler\Application\State\StateFactory;
 
 /**
  * Factory class responsible for creating instances of game states.
  */
 class GameStateFactory
 {
+    /**
+     * @var StateFactory
+     */
+    private StateFactory $stateFactory;
+
+    /**
+     * GameStateFactory constructor.
+     */
+    public function __construct()
+    {
+        $this->stateFactory = new StateFactory();
+    }
+
     /**
      * Creates and returns the Menu state.
      *
@@ -32,6 +44,6 @@ class GameStateFactory
      */
     public function createPlayingState(GameEngine $engine): GameStateInterface
     {
-        return new PlayingState($engine);
+        return new PlayingState($engine, $this->stateFactory);
     }
 }

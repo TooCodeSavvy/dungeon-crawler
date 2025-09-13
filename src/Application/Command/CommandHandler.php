@@ -53,27 +53,23 @@ class CommandHandler
     }
 
     /**
-     * Handles the provided command by dispatching it to the appropriate handler.
+     * Handles the provided command by executing it if allowed.
      *
-     * Validates if the command is known and if it can be executed in the current game state.
+     * Checks if the command can be executed in the current game state.
+     * If yes, executes the command and returns the result.
+     * Otherwise, returns a failure CommandResult.
      *
      * @param CommandInterface $command The command to handle.
-     * @param ?Game $game The current game state.
+     * @param Game|null $game The current game state or null if no active game.
      * @return CommandResult Result of command execution.
      */
     public function handle(CommandInterface $command, ?Game $game): CommandResult
     {
-        $commandClass = get_class($command);
-
-        if (!isset($this->handlers[$commandClass])) {
-            return CommandResult::failure("Unknown command: " . $command->getName());
+        if ($command->canExecute($game)) {
+            return $command->execute($game);
         }
 
-        if (!$command->canExecute($game)) {
-            return CommandResult::failure("Cannot execute " . $command->getName() . " right now.");
-        }
-
-        return $this->handlers[$commandClass]($command, $game);
+        return new CommandResult(false, 'Command cannot be executed.');
     }
 
     /**

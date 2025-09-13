@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace DungeonCrawler\Domain\Entity;
 
+use DungeonCrawler\Domain\Service\DungeonGenerator;
 use DungeonCrawler\Domain\ValueObject\Position;
 use DungeonCrawler\Domain\ValueObject\Score;
 
@@ -11,7 +12,7 @@ use DungeonCrawler\Domain\ValueObject\Score;
  *
  * Handles player movement, score tracking, combat status, and game lifecycle (victory/defeat).
  */
-final class Game
+class Game
 {
     /**
      * @var Player The player character in the game.
@@ -83,7 +84,6 @@ final class Game
     public static function create(string $playerName, string $difficulty = 'normal'): self
     {
         $player = Player::create($playerName);
-
         // Determine dungeon size based on difficulty
         $dungeonSize = match($difficulty) {
             'easy' => 5,
@@ -91,8 +91,17 @@ final class Game
             default => 10
         };
 
-        $generator = new \DungeonCrawler\Domain\Service\DungeonGenerator();
-        $dungeon = $generator->generate($dungeonSize, $difficulty);
+        // Convert difficulty string to a numeric value
+        $difficultyLevel = match($difficulty) {
+            'easy' => 1,
+            'normal' => 2,
+            'hard' => 3,
+            default => 2
+        };
+
+        $generator = new DungeonGenerator();
+        // Pass same size for both width and height, and the numeric difficulty level
+        $dungeon = $generator->generate($dungeonSize, $dungeonSize, $difficultyLevel);
 
         // Initialize game starting at the dungeon's entrance position
         return new self($player, $dungeon, $dungeon->getEntrancePosition());

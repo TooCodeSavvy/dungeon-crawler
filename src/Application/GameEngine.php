@@ -5,6 +5,8 @@ namespace DungeonCrawler\Application;
 
 use DungeonCrawler\Application\Command\CommandInterface;
 use DungeonCrawler\Application\Command\CommandHandler;
+use DungeonCrawler\Application\Command\LoadGameCommand;
+use DungeonCrawler\Application\Command\StartGameCommand;
 use DungeonCrawler\Application\State\GameStateInterface;
 use DungeonCrawler\Domain\Entity\Game;
 use DungeonCrawler\Domain\Repository\GameRepositoryInterface;

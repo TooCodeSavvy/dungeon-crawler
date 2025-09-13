@@ -92,6 +92,21 @@ class Player
         $this->position = $position;
         $this->attackPower = $attackPower;
     }
+    /**
+     * Factory method to create a new player with default health, position, and attack power.
+     *
+     * @param string $name The name of the player.
+     * @return self A new Player instance.
+     */
+    public static function create(string $name): self
+    {
+        // Use the full method to create a health instance with full health (current = max)
+        $defaultHealth = Health::full(100);  // current = max = 100
+        $defaultPosition = new Position(0, 0);  // Initial position (0, 0)
+        $defaultAttackPower = 20;  // Default attack power
+
+        return new self($name, $defaultHealth, $defaultPosition, $defaultAttackPower);
+    }
 
     /**
      * Reduce the player's health by a given damage amount.
