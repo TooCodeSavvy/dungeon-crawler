@@ -3,15 +3,21 @@ declare(strict_types=1);
 
 namespace DungeonCrawler\Infrastructure\Persistence;
 
+use DungeonCrawler\Domain\Entity\Dungeon;
 use DungeonCrawler\Domain\Entity\Game;
+use DungeonCrawler\Domain\Entity\Monster;
+use DungeonCrawler\Domain\Entity\Player;
+use DungeonCrawler\Domain\Entity\Room;
+use DungeonCrawler\Domain\Entity\Treasure;
 use DungeonCrawler\Domain\Repository\GameRepositoryInterface;
+use DungeonCrawler\Domain\ValueObject\Direction;
 
 /**
  * Repository for saving and loading Game entities as JSON files.
  *
  * Saves are stored under the `data/saves/` directory relative to the project.
  */
-final class JsonGameRepository implements GameRepositoryInterface
+class JsonGameRepository implements GameRepositoryInterface
 {
     private const SAVE_DIR = __DIR__ . '/../../../data/saves/';
 
@@ -158,11 +164,13 @@ final class JsonGameRepository implements GameRepositoryInterface
     /**
      * Serializes the Player entity into an array.
      *
-     * @param mixed $player Player entity instance
+     * @param Player $player Player entity instance
      * @return array<string, mixed>
      */
-    private function serializePlayer($player): array
+    private function serializePlayer(Player $player): array
     {
+        $inventory = $player->getInventory();
+
         return [
             'name' => $player->getName(),
             'health' => [
@@ -170,26 +178,36 @@ final class JsonGameRepository implements GameRepositoryInterface
                 'max' => $player->getHealth()->getMax()
             ],
             'attack_power' => $player->getAttackPower(),
-            'inventory' => array_map(
+            'inventory' => is_array($inventory) ? array_map(
                 fn($item) => $this->serializeTreasure($item),
-                $player->getInventory()
-            )
+                $inventory
+            ) : []
         ];
     }
 
     /**
      * Serializes the Dungeon entity into an array.
      *
-     * @param mixed $dungeon Dungeon entity instance
+     * @param Dungeon $dungeon Dungeon entity instance
      * @return array<string, mixed>
      */
-    private function serializeDungeon($dungeon): array
+    private function serializeDungeon(Dungeon $dungeon): array
     {
         return [
-            'size' => $dungeon->getSize(),
+            'width' => $dungeon->getWidth(),
+            'height' => $dungeon->getHeight(),
+            'difficulty' => $dungeon->getDifficulty(),
+            'entrance_position' => [
+                'x' => $dungeon->getEntrancePosition()->getX(),
+                'y' => $dungeon->getEntrancePosition()->getY()
+            ],
+            'exit_position' => [
+                'x' => $dungeon->getExitPosition()->getX(),
+                'y' => $dungeon->getExitPosition()->getY()
+            ],
             'rooms' => array_map(
                 fn($room) => $this->serializeRoom($room),
-                $dungeon->getRooms()
+                $dungeon->getAllRooms()
             )
         ];
     }
@@ -197,33 +215,49 @@ final class JsonGameRepository implements GameRepositoryInterface
     /**
      * Serializes a Room entity into an array.
      *
-     * @param mixed $room Room entity instance
+     * @param Room $room Room entity instance
      * @return array<string, mixed>
      */
-    private function serializeRoom($room): array
+    private function serializeRoom(Room $room): array
     {
+        $treasures = [];
+        if ($room->hasTreasure() && $room->getTreasure() !== null) {
+            $treasures[] = $this->serializeTreasure($room->getTreasure());
+        }
+
         return [
             'position' => ['x' => $room->getPosition()->getX(), 'y' => $room->getPosition()->getY()],
-            'name' => $room->getName(),
             'description' => $room->getDescription(),
             'visited' => $room->isVisited(),
-            'is_entrance' => $room->isEntrance(),
             'is_exit' => $room->isExit(),
             'monster' => $room->hasMonster() ? $this->serializeMonster($room->getMonster()) : null,
-            'treasures' => array_map(
-                fn($t) => $this->serializeTreasure($t),
-                $room->getTreasures()
-            ),
+            'treasures' => $treasures,
+            'connections' => $this->serializeConnections($room)
         ];
+    }
+
+    /**
+     * Serializes the room connections.
+     *
+     * @param Room $room Room entity instance
+     * @return array<string, bool>
+     */
+    private function serializeConnections(Room $room): array
+    {
+        $connections = [];
+        foreach (Direction::cases() as $direction) {
+            $connections[$direction->value] = $room->hasConnection($direction);
+        }
+        return $connections;
     }
 
     /**
      * Serializes a Monster entity into an array.
      *
-     * @param mixed $monster Monster entity instance
+     * @param Monster $monster Monster entity instance
      * @return array<string, mixed>
      */
-    private function serializeMonster($monster): array
+    private function serializeMonster(Monster $monster): array
     {
         return [
             'name' => $monster->getName(),
@@ -238,10 +272,10 @@ final class JsonGameRepository implements GameRepositoryInterface
     /**
      * Serializes a Treasure entity into an array.
      *
-     * @param mixed $treasure Treasure entity instance
+     * @param Treasure $treasure Treasure entity instance
      * @return array<string, mixed>
      */
-    private function serializeTreasure($treasure): array
+    private function serializeTreasure(Treasure $treasure): array
     {
         return [
             'name' => $treasure->getName(),

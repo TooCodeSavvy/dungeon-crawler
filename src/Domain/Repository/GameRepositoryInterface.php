@@ -31,6 +31,14 @@ interface GameRepositoryInterface
      */
     public function save(Game $game): string;
 
+
+    /**
+     * Lists all available saved games.
+     *
+     * @return array<string, array> List of saved games with metadata
+     */
+    public function listSaves(): array;
+
     /**
      * Deletes the saved game state by save ID, if any.
      *

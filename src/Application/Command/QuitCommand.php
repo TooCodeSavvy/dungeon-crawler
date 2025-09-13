@@ -4,36 +4,36 @@ declare(strict_types=1);
 namespace DungeonCrawler\Application\Command;
 
 use DungeonCrawler\Domain\Entity\Game;
+use DungeonCrawler\Application\State\MenuState;
 
 /**
- * Command to quit the current game.
- *
- * When executed, this command signals the game engine to terminate the game loop
- * and exit the application gracefully.
+ * Command to quit the current game and return to the main menu.
  */
 class QuitCommand implements CommandInterface
 {
     /**
-     * Executes the quit command.
+     * Executes the quit command, ending the current game session.
      *
-     * Returns a successful CommandResult indicating the game should quit.
-     *
-     * @param Game $game The current active game instance.
-     * @return CommandResult The result indicating quitting the game.
+     * @param ?Game $game The current game instance.
+     * @return CommandResult The result of executing the command.
      */
-    public function execute(Game $game): CommandResult
+    public function execute(?Game $game): CommandResult
     {
-        // Signal to quit the game (e.g., stop the game loop)
-        return new CommandResult(true, "Quitting game...", true);
+        // Return a result that requires a state transition to the menu
+        return new CommandResult(
+            true,
+            "Returning to main menu...",
+            ['quit' => true]
+        );
     }
 
     /**
-     * Determines if quitting is currently allowed.
+     * Determines if the quit command can be executed.
      *
-     * For now, quitting is always allowed.
+     * This can always be executed.
      *
      * @param Game $game The current game instance.
-     * @return bool True if the quit command can be executed.
+     * @return bool Always true as quitting is always available.
      */
     public function canExecute(Game $game): bool
     {
@@ -41,9 +41,9 @@ class QuitCommand implements CommandInterface
     }
 
     /**
-     * Returns the internal command name.
+     * Gets the name of the command.
      *
-     * @return string Command identifier 'quit'.
+     * @return string The command name.
      */
     public function getName(): string
     {
