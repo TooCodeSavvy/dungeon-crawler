@@ -22,25 +22,24 @@ enum Direction: string
     case WEST = 'west';
 
     /**
-     * Converts a string input into a Direction enum value.
+     * Converts a string to a Direction enum value.
      *
-     * Accepts full direction names or single-character aliases (e.g., 'n', 's').
-     *
-     * @param string $direction The user-provided direction string.
-     * @return self The corresponding Direction enum case.
-     *
-     * @throws \InvalidArgumentException If the input does not match a valid direction.
+     * @param string $direction The direction string (case-insensitive)
+     * @return self The corresponding Direction enum value
+     * @throws \InvalidArgumentException If the string doesn't match a valid direction
      */
     public static function fromString(string $direction): self
     {
-        $normalized = strtolower(trim($direction));
+        $direction = strtolower(trim($direction));
 
-        return match ($normalized) {
-            'n', 'north' => self::NORTH,
-            's', 'south' => self::SOUTH,
-            'e', 'east'  => self::EAST,
-            'w', 'west'  => self::WEST,
-            default => throw new \InvalidArgumentException("Invalid direction: {$direction}"),
+        echo "DEBUG: Direction::fromString received: '{$direction}'\n";
+
+        return match ($direction) {
+            'north', 'n' => self::NORTH,
+            'east', 'e' => self::EAST,
+            'south', 's' => self::SOUTH,
+            'west', 'w' => self::WEST,
+            default => throw new \InvalidArgumentException("Invalid direction: {$direction}")
         };
     }
 

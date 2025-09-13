@@ -109,6 +109,16 @@ class Player
     }
 
     /**
+     * Sets the player's position to a new location.
+     *
+     * @param Position $position The new position
+     */
+    public function setPosition(Position $position): void
+    {
+        $this->position = $position;
+    }
+
+    /**
      * Reduce the player's health by a given damage amount.
      *
      * @param int $damage Damage to apply.

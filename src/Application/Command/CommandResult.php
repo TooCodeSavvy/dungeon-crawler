@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace DungeonCrawler\Application\Command;
 
+use DungeonCrawler\Application\State\GameStateInterface;
+
 /**
  * Represents the outcome of executing a command.
  */
@@ -16,8 +18,48 @@ class CommandResult
     function __construct(
         private readonly bool $success,
         private readonly string $message,
-        private readonly array $data = []
+        private readonly array $data = [],
+        private readonly bool $requiresStateChange = false,
+        private readonly ?GameStateInterface $newState = null
     ) {}
+
+    /**
+     * Checks if this result requires a state change in the game.
+     *
+     * @return bool True if a state change is required.
+     */
+    public function requiresStateChange(): bool
+    {
+        return $this->requiresStateChange;
+    }
+
+
+    /**
+     * Gets the new state to transition to, if applicable.
+     *
+     * @return GameStateInterface|null The new state or null if no state change is required.
+     */
+    public function getNewState(): ?GameStateInterface
+    {
+        return $this->newState;
+    }
+
+    /**
+     * Creates a result that requires a state transition.
+     *
+     * @param GameStateInterface $newState The state to transition to.
+     * @param string $message Optional message to display.
+     * @param array $data Optional additional data.
+     * @return self
+     */
+    public static function stateTransition(
+        GameStateInterface $newState,
+        string             $message = '',
+        array              $data = []
+    ): self
+    {
+        return new self(true, $message, $data, true, $newState);
+    }
 
     /**
      * Creates a successful command result.
@@ -95,5 +137,15 @@ class CommandResult
     public function get(string $key, mixed $default = null): mixed
     {
         return $this->data[$key] ?? $default;
+    }
+
+    /**
+     * Checks if this result has a non-empty message.
+     *
+     * @return bool True if there's a message, false otherwise.
+     */
+    public function hasMessage(): bool
+    {
+        return !empty($this->message);
     }
 }

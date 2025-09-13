@@ -14,6 +14,8 @@ use DungeonCrawler\Application\Command\MapCommand;
 use DungeonCrawler\Application\Command\InventoryCommand;
 use DungeonCrawler\Application\GameEngine;
 use DungeonCrawler\Domain\Entity\Game;
+use DungeonCrawler\Domain\Service\CombatService;
+use DungeonCrawler\Domain\Service\MovementService;
 use DungeonCrawler\Infrastructure\Console\ConsoleRenderer;
 use DungeonCrawler\Infrastructure\Console\InputParser;
 
@@ -26,13 +28,27 @@ use DungeonCrawler\Infrastructure\Console\InputParser;
 class PlayingState implements GameStateInterface
 {
     /**
+     * @var MovementService Movement service for processing moves
+     */
+    private MovementService $movementService;
+
+    /**
+     * @var CombatService Combat service for handling attacks
+     */
+    private CombatService $combatService;
+
+    /**
      * @param GameEngine $engine The main game engine managing the game loop and state transitions.
      * @param StateFactory $stateFactory Factory to create other game states for transitions.
      */
     public function __construct(
         private readonly GameEngine $engine,
         private readonly StateFactory $stateFactory
-    ) {}
+    ) {
+        // Initialize services
+        $this->movementService = new MovementService();
+        $this->combatService = new CombatService();
+    }
 
     /**
      * Render the game view for the current state, including status, room description, and possible actions.
@@ -65,15 +81,21 @@ class PlayingState implements GameStateInterface
     {
         $parsed = $parser->parse($input);
 
+        // Debug the parsed input
+        if ($parsed['command'] === 'move' || $parsed['command'] === 'go') {
+            echo "DEBUG: Direction parsed: '" . ($parsed['direction'] ?? 'null') . "'\n";
+        }
+
         return match ($parsed['command']) {
-            'move', 'go' => new MoveCommand($parsed['direction'] ?? ''),
-            'attack', 'fight' => new AttackCommand($parsed['target'] ?? null),
+            'move', 'go' => new MoveCommand($parsed['direction'] ?? '', $this->movementService),
+            'attack', 'fight' => new AttackCommand($parsed['target'] ?? null, $this->combatService),
             'take', 'get' => new TakeCommand($parsed['item'] ?? 'all'),
             'save' => new SaveCommand(),
             'quit' => new QuitCommand(),
             'help' => new HelpCommand(),
             'map' => new MapCommand(),
             'inventory' => new InventoryCommand(),
+            'debug' => new DebugCommand(),
             default => null
         };
     }

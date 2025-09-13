@@ -4,10 +4,12 @@ declare(strict_types=1);
 namespace DungeonCrawler\Domain\Service;
 
 use DungeonCrawler\Domain\Entity\Dungeon;
+use DungeonCrawler\Domain\Entity\Game;
 use DungeonCrawler\Domain\Entity\Player;
 use DungeonCrawler\Domain\Entity\Room;
 use DungeonCrawler\Domain\ValueObject\Direction;
-use DungeonCrawler\Domain\ValueObject\Position;
+use DungeonCrawler\Domain\ValueObject\LocationInfo;
+use DungeonCrawler\Domain\ValueObject\MovementResult;
 
 /**
  * Service responsible for handling player movement within the dungeon.
@@ -15,104 +17,72 @@ use DungeonCrawler\Domain\ValueObject\Position;
  * This service encapsulates all movement logic including validation,
  * room transitions, and movement-related events.
  */
-final class MovementService
+class MovementService
 {
     /**
-     * Attempts to move the player in the specified direction.
+     * Attempts to move a player in the specified direction.
      *
-     * @param Player $player The player attempting to move
-     * @param Direction $direction The direction to move
-     * @param Dungeon $dungeon The current dungeon
+     * @param Game $game The current game instance
+     * @param Direction $direction The direction to move in
      *
      * @return MovementResult The result of the movement attempt
      */
-    public function move(Player $player, Direction $direction, Dungeon $dungeon): MovementResult
+    public function move(Game $game, Direction $direction): MovementResult
     {
-        $currentPosition = $player->getPosition();
-        $currentRoom = $dungeon->getRoomAt($currentPosition);
+        $dungeon = $game->getDungeon();
+        $currentPosition = $game->getCurrentPosition();
+        $currentRoom = $game->getCurrentRoom();
 
-        if ($currentRoom === null) {
-            return MovementResult::failed('You are not in a valid room!');
-        }
-
-        // Check if there's a monster blocking the way
-        if ($currentRoom->hasMonster()) {
-            return MovementResult::blocked(
-                'You cannot leave! A ' . $currentRoom->getMonster()->getName() . ' blocks your path!'
-            );
-        }
-
-        // Check if the current room has a connection in that direction
+        // Check if there's a connection in that direction
         if (!$currentRoom->hasConnection($direction)) {
-            return MovementResult::failed($this->getWallMessage($direction));
+            return MovementResult::failure("You can't go {$direction->value} from here. There's a wall.");
         }
 
-        // Check if there's actually a room in that direction
-        $targetRoom = $dungeon->getRoomInDirection($currentPosition, $direction);
-        if ($targetRoom === null) {
-            return MovementResult::failed($this->getWallMessage($direction));
-        }
-
-        // Calculate new position
         try {
             $newPosition = $currentPosition->move($direction);
+            $newRoom = $dungeon->getRoomAt($newPosition);
+
+            if ($newRoom === null) {
+                return MovementResult::failure("You can't go {$direction->value} from here. There's nothing there.");
+            }
+
+            // Check if there's a monster blocking the way
+            if ($newRoom->hasMonster()) {
+                $monster = $newRoom->getMonster();
+                return MovementResult::blocked(
+                    "A {$monster->getName()} blocks your path! Defeat it to continue.",
+                    $monster
+                );
+            }
+
+            // Move is successful - update player position
+            $game->movePlayer($newPosition);
+
+            // Create location info for the result
+            $locationInfo = new LocationInfo(
+                $newRoom->getDescription(),
+                $newRoom->hasTreasure(),
+                $newRoom->isExit(),
+                $newRoom->getAvailableDirections()
+            );
+
+            return MovementResult::success($locationInfo);
+
         } catch (\InvalidArgumentException $e) {
-            return MovementResult::failed('You cannot move in that direction!');
+            // This would happen if the new position is invalid (e.g., negative coordinates)
+            return MovementResult::failure("You can't go {$direction->value} from here. You've reached the edge of the dungeon.");
         }
-
-        // Verify the new position has a room (double-check)
-        $newRoom = $dungeon->getRoomAt($newPosition);
-        if ($newRoom === null) {
-            return MovementResult::failed($this->getWallMessage($direction));
-        }
-
-        // Execute the movement
-        $player->moveTo($newPosition);
-        $newRoom->enter();
-
-        // Update the room in the dungeon to persist the visited state
-        $dungeon->updateRoom($newRoom);
-
-        // Build the result with room information
-        return MovementResult::success(
-            room: $newRoom,
-            message: $this->buildMovementMessage($direction, $newRoom),
-            description: $this->buildRoomDescription($newRoom, $dungeon)
-        );
     }
 
     /**
-     * Gets available movement options from the player's current position.
+     * Gets an array of available directions from a room.
      *
-     * @param Player $player The player
-     * @param Dungeon $dungeon The current dungeon
-     *
-     * @return array<Direction> Array of available directions
+     * @param Room $room The room to check
+     * @return Direction[] Array of available directions
      */
-    public function getAvailableDirections(Player $player, Dungeon $dungeon): array
+    private function getAvailableDirections(Room $room): array
     {
-        $currentRoom = $dungeon->getRoomAt($player->getPosition());
-
-        if ($currentRoom === null) {
-            return [];
-        }
-
-        // If there's a monster, no directions are available
-        if ($currentRoom->hasMonster()) {
-            return [];
-        }
-
-        $availableDirections = [];
-
-        foreach ($currentRoom->getAvailableDirections() as $direction) {
-            // Verify there's actually a room in that direction
-            $targetRoom = $dungeon->getRoomInDirection($currentRoom->getPosition(), $direction);
-            if ($targetRoom !== null) {
-                $availableDirections[] = $direction;
-            }
-        }
-
-        return $availableDirections;
+        return $room->getAvailableDirections();
     }
 
     /**
@@ -173,57 +143,33 @@ final class MovementService
     }
 
     /**
-     * Checks if the player can move (not blocked by monster).
+     * Checks if a player can move in a specific direction.
      *
      * @param Player $player The player
+     * @param Direction $direction The direction to check
      * @param Dungeon $dungeon The current dungeon
      *
      * @return bool True if movement is possible
      */
-    public function canMove(Player $player, Dungeon $dungeon): bool
+    public function canMove(Player $player, Direction $direction, Dungeon $dungeon): bool
     {
-        $currentRoom = $dungeon->getRoomAt($player->getPosition());
+        $currentPosition = $player->getPosition();
+        $currentRoom = $dungeon->getRoomAt($currentPosition);
 
         if ($currentRoom === null) {
             return false;
         }
 
-        // Cannot move if there's a living monster in the room
-        return !$currentRoom->hasMonster();
-    }
-
-    /**
-     * Gets information about the player's current location.
-     *
-     * @param Player $player The player
-     * @param Dungeon $dungeon The current dungeon
-     *
-     * @return LocationInfo Information about the current location
-     */
-    public function getCurrentLocationInfo(Player $player, Dungeon $dungeon): LocationInfo
-    {
-        $currentRoom = $dungeon->getRoomAt($player->getPosition());
-
-        if ($currentRoom === null) {
-            return new LocationInfo(
-                position: $player->getPosition(),
-                description: 'You are lost in the void!',
-                hasMonster: false,
-                hasTreasure: false,
-                isExit: false,
-                availableDirections: []
-            );
+        if (!$currentRoom->hasConnection($direction)) {
+            return false;
         }
 
-        return new LocationInfo(
-            position: $player->getPosition(),
-            description: $currentRoom->getDescription(),
-            hasMonster: $currentRoom->hasMonster(),
-            hasTreasure: $currentRoom->hasTreasure(),
-            isExit: $currentRoom->isExit(),
-            availableDirections: $this->getAvailableDirections($player, $dungeon),
-            room: $currentRoom
-        );
+        try {
+            $newPosition = $currentPosition->move($direction);
+            return $dungeon->getRoomAt($newPosition) !== null;
+        } catch (\InvalidArgumentException $e) {
+            return false;
+        }
     }
 
     /**

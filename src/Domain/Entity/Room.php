@@ -137,6 +137,14 @@ final class Room
     /**
      * Marks the room as visited by the player.
      */
+    public function markAsVisited(): void
+    {
+        $this->visited = true;
+    }
+
+    /**
+     * Marks the room as visited by the player.
+     */
     public function enter(): void
     {
         $this->visited = true;

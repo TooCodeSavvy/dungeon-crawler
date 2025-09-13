@@ -337,4 +337,15 @@ class Dungeon
 
         return ($this->getVisitedRoomCount() / $totalRooms) * 100;
     }
+
+    /**
+     * Checks if a room exists at the specified position.
+     *
+     * @param Position $position The position to check
+     * @return bool True if a room exists at the position, false otherwise
+     */
+    public function hasRoomAt(Position $position): bool
+    {
+        return isset($this->rooms[$position->toString()]);
+    }
 }
