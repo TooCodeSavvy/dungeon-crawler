@@ -224,4 +224,20 @@ class GameEngine
     {
         return $this->game;
     }
+
+    /**
+     * Gets the game repository
+     */
+    public function getRepository(): GameRepositoryInterface
+    {
+        return $this->repository;
+    }
+
+    /**
+     * Gets the state factory
+     */
+    public function getStateFactory(): GameStateFactory
+    {
+        return $this->stateFactory;
+    }
 }

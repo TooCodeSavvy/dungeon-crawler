@@ -34,10 +34,10 @@ class LoadGameCommand implements CommandInterface
      * This implementation is a stub. Actual loading logic should be
      * handled by the GameEngine or a repository service.
      *
-     * @param Game $game The current game instance (may be null or active).
+     * @param ?Game $game The current game instance (may be null or active).
      * @return CommandResult Result of the load command execution.
      */
-    public function execute(Game $game): CommandResult
+    public function execute(?Game $game): CommandResult
     {
         // TODO: Implement actual loading logic here or in the handler.
         // Example:

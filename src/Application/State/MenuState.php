@@ -6,7 +6,6 @@ namespace DungeonCrawler\Application\State;
 
 use DungeonCrawler\Application\Command\CommandInterface;
 use DungeonCrawler\Application\Command\StartGameCommand;
-use DungeonCrawler\Application\Command\LoadGameCommand;
 use DungeonCrawler\Application\Command\QuitCommand;
 use DungeonCrawler\Application\GameEngine;
 use DungeonCrawler\Domain\Entity\Game;
@@ -46,8 +45,11 @@ class MenuState implements GameStateInterface
                 return new StartGameCommand('Player', 'normal');
 
             case '2':
-                // Load game command, might require a save ID - for now assume default or prompt later
-                return new LoadGameCommand('default_save');
+                // Transition to the load game state
+                $this->engine->transitionTo(
+                    $this->engine->getStateFactory()->createLoadGameState($this->engine)
+                );
+                return null;
 
             case '3':
                 return new QuitCommand();

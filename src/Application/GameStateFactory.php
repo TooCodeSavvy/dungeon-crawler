@@ -5,6 +5,7 @@ namespace DungeonCrawler\Application;
 use DungeonCrawler\Application\State\GameStateInterface;
 use DungeonCrawler\Application\State\MenuState;
 use DungeonCrawler\Application\State\PlayingState;
+use DungeonCrawler\Application\State\LoadGameState;
 use DungeonCrawler\Application\State\StateFactory;
 
 /**
@@ -45,5 +46,16 @@ class GameStateFactory
     public function createPlayingState(GameEngine $engine): GameStateInterface
     {
         return new PlayingState($engine, $this->stateFactory);
+    }
+
+    /**
+     * Creates and returns the Load Game state.
+     *
+     * @param GameEngine $engine Reference to the main game engine.
+     * @return GameStateInterface
+     */
+    public function createLoadGameState(GameEngine $engine): GameStateInterface
+    {
+        return new LoadGameState($engine);
     }
 }
