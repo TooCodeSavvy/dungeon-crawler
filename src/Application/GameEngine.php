@@ -213,21 +213,6 @@ class GameEngine
     }
 
     /**
-     * Saves the current game state using the repository.
-     *
-     * Throws RuntimeException if no active game is loaded.
-     */
-    public function saveGame(): void
-    {
-        if ($this->game === null) {
-            throw new \RuntimeException('No game to save');
-        }
-
-        $this->repository->save($this->game);
-        $this->renderer->renderSuccess('Game saved successfully!');
-    }
-
-    /**
      * Quits the game by stopping the main loop.
      */
     public function quit(): void

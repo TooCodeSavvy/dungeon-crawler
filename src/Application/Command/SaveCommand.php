@@ -1,6 +1,5 @@
 <?php
 declare(strict_types=1);
-
 namespace DungeonCrawler\Application\Command;
 
 use DungeonCrawler\Domain\Entity\Game;
@@ -18,12 +17,23 @@ class SaveCommand implements CommandInterface
     private GameRepositoryInterface $gameRepository;
 
     /**
+     * @var bool Whether to create a new save file instead of updating existing
+     */
+    private bool $createNew;
+
+    /**
+     * Creates a new save command.
+     *
+     * @param bool $createNew Whether to create a new save file (true) or update existing (false)
      * @param GameRepositoryInterface|null $gameRepository Optional repository for saving games
      */
-    public function __construct(?GameRepositoryInterface $gameRepository = null)
-    {
+    public function __construct(
+        bool $createNew = false,
+        ?GameRepositoryInterface $gameRepository = null
+    ) {
         // If no repository is provided, create a default one
         $this->gameRepository = $gameRepository ?? new JsonGameRepository();
+        $this->createNew = $createNew;
     }
 
     /**
@@ -35,19 +45,26 @@ class SaveCommand implements CommandInterface
     public function execute(?Game $game): CommandResult
     {
         if ($game === null) {
-            return new CommandResult(false, "No active game to save.");
+            return CommandResult::failure("No active game to save.");
         }
 
         try {
-            // Save the game using your repository
-            $saveId = $this->gameRepository->save($game);
+            // Get current save ID
+            $currentSaveId = $game->getSaveId();
 
-            // Update the game with the save ID
-            $game->setSaveId($saveId);
-
-            return new CommandResult(true, "Game saved successfully. Save ID: $saveId");
+            // Determine if we should create a new save or update existing
+            if ($this->createNew || $currentSaveId === null) {
+                // Create a new save
+                $saveId = $this->gameRepository->save($game);
+                $game->setSaveId($saveId);
+                return CommandResult::success("Game saved successfully. Save ID: $saveId");
+            } else {
+                // Update existing save
+                $this->gameRepository->save($game, $currentSaveId);
+                return CommandResult::success("Game updated successfully. Save ID: $currentSaveId");
+            }
         } catch (\Exception $e) {
-            return new CommandResult(false, "Failed to save game: " . $e->getMessage());
+            return CommandResult::failure("Failed to save game: " . $e->getMessage());
         }
     }
 
@@ -71,4 +88,5 @@ class SaveCommand implements CommandInterface
     {
         return 'save';
     }
+
 }

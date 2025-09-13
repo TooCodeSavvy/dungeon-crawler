@@ -20,6 +20,14 @@ class InputParser
         // Trim and convert to lowercase
         $input = trim(strtolower($input));
 
+        // Handle "save as" command
+        if ($input === 'save as' || $input === 'saveas') {
+            return [
+                'command' => 'save',
+                'as' => true
+            ];
+        }
+
         // Split the input into words
         $words = preg_split('/\s+/', $input);
 

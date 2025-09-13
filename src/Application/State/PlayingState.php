@@ -80,23 +80,31 @@ class PlayingState implements GameStateInterface
      */
     public function parseInput(string $input, InputParser $parser): ?CommandInterface
     {
-        $parsed = $parser->parse($input);
-
-        // Check for direct 'quit' command
+        // Direct check for 'quit' command for reliability
         if (strtolower(trim($input)) === 'quit') {
             return new QuitCommand();
         }
+
+        // Check for specific save commands
+        if (strtolower(trim($input)) === 'save') {
+            return new SaveCommand(false); // Update existing save
+        }
+
+        if (strtolower(trim($input)) === 'save as' || strtolower(trim($input)) === 'saveas') {
+            return new SaveCommand(true); // Create new save
+        }
+
+        $parsed = $parser->parse($input);
 
         return match ($parsed['command']) {
             'move', 'go' => new MoveCommand($parsed['direction'] ?? '', $this->movementService),
             'attack', 'fight' => new AttackCommand($parsed['target'] ?? null, $this->combatService),
             'take', 'get' => new TakeCommand($parsed['item'] ?? 'all'),
-            'save' => new SaveCommand(),
+            'save' => new SaveCommand($parsed['as'] ?? false), // Check for "as" flag
             'quit' => new QuitCommand(),
             'help' => new HelpCommand(),
             'map' => new MapCommand(),
             'inventory' => new InventoryCommand(),
-            'debug' => new DebugCommand(),
             default => null
         };
     }
@@ -139,7 +147,15 @@ class PlayingState implements GameStateInterface
      */
     private function getAvailableActions(Game $game): array
     {
-        $actions = ['move <direction>', 'map', 'inventory', 'save', 'quit', 'help'];
+        $actions = [
+            'move <direction>',
+            'map',
+            'inventory',
+            'save',
+            'save as', // Add the "save as" option to the list of available actions
+            'quit',
+            'help'
+        ];
 
         if ($game->getCurrentRoom()->hasTreasure()) {
             $actions[] = 'take <item|all>';

@@ -36,15 +36,20 @@ class JsonGameRepository implements GameRepositoryInterface
      * Saves the given Game entity as a JSON file.
      *
      * @param Game $game The game to save
-     * @return string The generated save ID
+     * @param string|null $saveId Optional save ID to update instead of creating new
+     * @return string The save ID
      * @throws \RuntimeException If saving fails
      */
-    public function save(Game $game): string
+    public function save(Game $game, ?string $saveId = null): string
     {
-        $saveId = uniqid('save_', true);
-        $filename = self::SAVE_DIR . $saveId . '.json';
+        // If no save ID provided, generate a new one
+        $saveId = $saveId ?? uniqid('save_', true);
 
+        $filename = self::SAVE_DIR . $saveId . '.json';
         $data = $this->serialize($game);
+
+        // Add timestamp to the save data
+        $data['timestamp'] = time();
 
         if (file_put_contents($filename, json_encode($data, JSON_PRETTY_PRINT)) === false) {
             throw new \RuntimeException("Failed to save game to file: $filename");
@@ -54,11 +59,30 @@ class JsonGameRepository implements GameRepositoryInterface
     }
 
     /**
+     * Deletes a saved game file by save ID.
+     *
+     * @param string $saveId The save identifier
+     * @throws \RuntimeException If deletion fails
+     */
+    public function delete(string $saveId): void
+    {
+        $filename = self::SAVE_DIR . $saveId . '.json';
+
+        if (!file_exists($filename)) {
+            return; // File doesn't exist, nothing to do
+        }
+
+        if (!unlink($filename)) {
+            throw new \RuntimeException("Failed to delete save file: $saveId");
+        }
+    }
+
+    /**
      * Loads a saved Game entity from a JSON file by save ID.
      *
      * @param string $saveId The save identifier
      * @return Game The reconstructed Game entity
-     * @throws \RuntimeException If loading or parsing fails
+     * @throws \RuntimeException|\DateMalformedStringException If loading or parsing fails
      */
     public function load(string $saveId): Game
     {
@@ -117,23 +141,6 @@ class JsonGameRepository implements GameRepositoryInterface
         uasort($saves, fn($a, $b) => $b['saved_at'] <=> $a['saved_at']);
 
         return $saves;
-    }
-
-    /**
-     * Deletes a saved game file by save ID.
-     *
-     * @param string $saveId The save identifier
-     * @throws \RuntimeException If deletion fails
-     */
-    public function delete(string $saveId): void
-    {
-        $filename = self::SAVE_DIR . $saveId . '.json';
-
-        if (file_exists($filename)) {
-            if (!unlink($filename)) {
-                throw new \RuntimeException("Failed to delete save file: $saveId");
-            }
-        }
     }
 
     /**

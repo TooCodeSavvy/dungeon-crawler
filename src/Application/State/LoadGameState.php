@@ -1,6 +1,5 @@
 <?php
 declare(strict_types=1);
-
 namespace DungeonCrawler\Application\State;
 
 use DungeonCrawler\Application\Command\CommandInterface;
@@ -28,6 +27,13 @@ class LoadGameState implements GameStateInterface
     private GameEngine $engine;
 
     /**
+     * Whether the state is currently in save deletion mode.
+     *
+     * @var bool
+     */
+    private bool $deleteMode = false;
+
+    /**
      * Cache of available save games and their metadata.
      *
      * Format: [saveId => ['player_name' => string, 'turn' => int, 'saved_at' => int]]
@@ -49,10 +55,6 @@ class LoadGameState implements GameStateInterface
     /**
      * Renders the load game UI showing available save files.
      *
-     * This method displays a list of available save files with metadata such as
-     * player name, turn number, and save timestamp. If no saves are found,
-     * it displays a message and instructions to return to the main menu.
-     *
      * @param ConsoleRenderer $renderer The renderer to use for displaying output
      * @param Game|null $game The current game instance (not used in this state)
      *
@@ -64,7 +66,7 @@ class LoadGameState implements GameStateInterface
         $renderer->clear();
         $renderer->renderLine("=== Load Game ===");
 
-        // Refresh the list of saves from the repository to ensure it's up-to-date
+        // Refresh the list of saves from the repository
         $this->saves = $this->engine->getRepository()->listSaves();
 
         // Handle the case where no save files exist
@@ -75,52 +77,134 @@ class LoadGameState implements GameStateInterface
             return;
         }
 
-        // Display the heading for the save file list
-        $renderer->renderLine("Available saved games:");
+        // Display appropriate heading based on mode
+        if ($this->deleteMode) {
+            $renderer->renderLine("Select a save to DELETE:");
+            $renderer->renderLine("WARNING: This action cannot be undone!");
+        } else {
+            $renderer->renderLine("Available saved games:");
+        }
+
         $renderer->renderLine("");
 
         // Display each save file with its metadata in a numbered list
         $index = 1;
         foreach ($this->saves as $saveId => $save) {
-            // Format the timestamp into a human-readable date/time
-            $saveTime = date('Y-m-d H:i:s', $save['saved_at']);
+            // Format the timestamp into a human-readable relative time
+            $relativeTime = $this->getRelativeTimeString($save['saved_at']);
 
-            // Display entry with index, player name, turn number, and save time
-            $renderer->renderLine("{$index}. {$save['player_name']} - Turn: {$save['turn']} - Saved: {$saveTime}");
+            // Display entry with index, player name, turn number, and relative time
+            $renderer->renderLine("{$index}. {$save['player_name']} - Turn: {$save['turn']} - Saved: {$relativeTime}");
             $index++;
         }
 
         // Display navigation options
         $renderer->renderLine("");
-        $renderer->renderLine("0. Back to Main Menu");
+
+        if ($this->deleteMode) {
+            $renderer->renderLine("0. Cancel deletion");
+        } else {
+            $renderer->renderLine("d. Delete a save");
+            $renderer->renderLine("0. Back to Main Menu");
+        }
+
         $renderer->renderLine("");
 
-        // Prompt for user input
-        $renderer->renderLine("Enter the number of the save to load:");
+        // Prompt for user input based on current mode
+        if ($this->deleteMode) {
+            $renderer->renderLine("Enter the number of the save to DELETE (or 0 to cancel):");
+        } else {
+            $renderer->renderLine("Enter the number of the save to load (or 'd' to delete):");
+        }
     }
 
     /**
-     * Processes user input to select a save file or return to menu.
+     * Converts a timestamp to a human-readable relative time string.
      *
-     * This method handles the following user inputs:
-     * - "0": Return to the main menu
-     * - A valid numeric index: Create a LoadGameCommand for the selected save
-     * - Any other input: Return null to indicate invalid input
+     * @param int $timestamp The timestamp to convert
+     * @return string A relative time string (e.g., "2 minutes ago", "1 day ago")
+     */
+    private function getRelativeTimeString(int $timestamp): string
+    {
+        $now = time();
+        $diff = $now - $timestamp;
+
+        if ($diff < 60) {
+            return "just now";
+        } elseif ($diff < 3600) {
+            $minutes = floor($diff / 60);
+            return $minutes . " minute" . ($minutes > 1 ? "s" : "") . " ago";
+        } elseif ($diff < 86400) {
+            $hours = floor($diff / 3600);
+            return $hours . " hour" . ($hours > 1 ? "s" : "") . " ago";
+        } elseif ($diff < 2592000) {
+            $days = floor($diff / 86400);
+            return $days . " day" . ($days > 1 ? "s" : "") . " ago";
+        } else {
+            return date('Y-m-d H:i:s', $timestamp);
+        }
+    }
+
+    /**
+     * Processes user input to select a save file, delete a save, or return to menu.
      *
      * @param string $input The user's input string
-     * @param InputParser $parser The input parser (not used in this simple implementation)
+     * @param InputParser $parser The input parser
      *
      * @return CommandInterface|null A LoadGameCommand if a valid save was selected, null otherwise
      */
     public function parseInput(string $input, InputParser $parser): ?CommandInterface
     {
         // Remove any leading/trailing whitespace from input
-        $input = trim($input);
+        $input = trim(strtolower($input));
 
         // Handle empty input, no saves available, or explicit menu selection
-        if (empty($this->saves) || $input === '0') {
+        if (empty($this->saves)) {
             // Transition back to the menu state
             $this->engine->transitionTo($this->engine->getStateFactory()->createMenuState($this->engine));
+            return null;
+        }
+
+        // Handle inputs that work in either mode
+        if ($input === '0') {
+            if ($this->deleteMode) {
+                // Exit delete mode and stay on the load screen
+                $this->deleteMode = false;
+                return null;
+            } else {
+                // Return to main menu
+                $this->engine->transitionTo($this->engine->getStateFactory()->createMenuState($this->engine));
+                return null;
+            }
+        }
+
+        // Enter delete mode
+        if (!$this->deleteMode && ($input === 'd' || $input === 'delete')) {
+            $this->deleteMode = true;
+            return null;
+        }
+
+        // If in delete mode, process deletion
+        if ($this->deleteMode) {
+            // Convert input to number
+            $selection = intval($input);
+
+            if ($selection > 0 && $selection <= count($this->saves)) {
+                $saveIndex = $selection - 1;
+                $saveIds = array_keys($this->saves);
+
+                if (isset($saveIds[$saveIndex])) {
+                    $saveId = $saveIds[$saveIndex];
+                    // Delete the save
+                    $this->engine->getRepository()->delete($saveId);
+                    // Exit delete mode
+                    $this->deleteMode = false;
+                    return null;
+                }
+            }
+
+            // Invalid input in delete mode
+            $this->deleteMode = false;
             return null;
         }
 
@@ -168,7 +252,7 @@ class LoadGameState implements GameStateInterface
     /**
      * Called when entering this state.
      *
-     * No special initialization is needed for the load game state.
+     * Reset delete mode to ensure we always start in load mode.
      *
      * @param Game|null $game The current game instance
      *
@@ -176,7 +260,8 @@ class LoadGameState implements GameStateInterface
      */
     public function onEnter(?Game $game): void
     {
-        // No special initialization needed
+        // Reset delete mode when entering this state
+        $this->deleteMode = false;
     }
 
     /**

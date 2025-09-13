@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace DungeonCrawler\Application\Command;
 
 use DungeonCrawler\Domain\Entity\Game;
-use DungeonCrawler\Application\State\MenuState;
 
 /**
  * Command to quit the current game and return to the main menu.
