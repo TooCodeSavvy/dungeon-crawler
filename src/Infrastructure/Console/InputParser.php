@@ -10,55 +10,88 @@ namespace DungeonCrawler\Infrastructure\Console;
 class InputParser
 {
     /**
-     * Parses a raw input string into a command name and arguments.
+     * Parses a raw input string into structured command data.
      *
-     * Example:
-     *   "move north" => ['command' => 'move', 'args' => ['north']]
-     *   "attack goblin" => ['command' => 'attack', 'args' => ['goblin']]
-     *
-     * @param string $input Raw input from user
-     * @return array{command: string, args: string[]}
+     * @param string $input The raw input string from the user
+     * @return array<string, string> Structured command data
      */
     public function parse(string $input): array
     {
-        // Trim input and split by whitespace
-        $parts = preg_split('/\s+/', trim($input));
+        // Trim and convert to lowercase
+        $input = trim(strtolower($input));
 
-        if (empty($parts) || $parts[0] === '') {
-            // No input, return empty command and args
+        // Handle "save as" command
+        if ($input === 'save as' || $input === 'saveas') {
             return [
-                'command' => '',
-                'args' => [],
+                'command' => 'save',
+                'as' => true
             ];
         }
 
-        // The first word is the command name
-        $command = strtolower(array_shift($parts));
+        // Split the input into words
+        $words = preg_split('/\s+/', $input);
 
-        // Remaining parts are arguments
-        $args = $parts;
+        // Empty input
+        if (empty($words) || empty($words[0])) {
+            return ['command' => ''];
+        }
 
-        return [
-            'command' => $command,
-            'args' => $args,
-        ];
+        // Extract the command (first word)
+        $command = $words[0];
+
+        // Handle special cases for movement commands
+        if (in_array($command, ['n', 's', 'e', 'w', 'north', 'south', 'east', 'west'])) {
+            return [
+                'command' => 'move',
+                'direction' => $command
+            ];
+        }
+
+        // For 'move' or 'go' commands, the second word is the direction
+        if (($command === 'move' || $command === 'go') && isset($words[1])) {
+            return [
+                'command' => $command,
+                'direction' => $words[1]
+            ];
+        }
+
+        // For 'take' or 'get' commands, the second word is the item
+        if (($command === 'take' || $command === 'get') && isset($words[1])) {
+            return [
+                'command' => $command,
+                'item' => $words[1]
+            ];
+        }
+
+        // For 'attack' or 'fight' commands, the rest is the target
+        if ($command === 'attack' || $command === 'fight') {
+            $target = count($words) > 1 ? implode(' ', array_slice($words, 1)) : null;
+            return [
+                'command' => $command,
+                'target' => $target
+            ];
+        }
+
+        // For simple commands without parameters
+        return ['command' => $command];
     }
 
     /**
-     * Reads a line of input from the user.
+     * Gets a line of input from the user.
      *
-     * @return string The raw input string entered by the user.
+     * @param string $prompt Optional prompt to display
+     * @return string The user's input
      */
-    public function getInput(): string
+    public function getInput(string $prompt = '> '): string
     {
-        echo "> "; // Optionally display a prompt symbol
+        echo $prompt;
         $input = fgets(STDIN);
 
         if ($input === false) {
-            // Handle EOF or error - treat as empty input
+            // Handle EOF or error
             return '';
         }
 
-        return trim($input);
+        return $input;
     }
 }

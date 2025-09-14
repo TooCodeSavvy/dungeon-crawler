@@ -28,36 +28,46 @@ final class MoveCommand implements CommandInterface
      * increments the game turn and returns a success message with location info.
      * On failure, returns an appropriate failure message.
      *
-     * @param Game $game The current game state.
+     * @param ?Game $game The current game state.
      * @return CommandResult Result of the move attempt.
      */
-    public function execute(Game $game): CommandResult
+    public function execute(?Game $game): CommandResult
     {
+        if ($game === null) {
+            return CommandResult::failure("No active game.");
+        }
+
+        if (empty($this->direction)) {
+            return CommandResult::failure("You need to specify a direction (north, south, east, west).");
+        }
+
         try {
             $direction = Direction::fromString($this->direction);
-            $result = $this->movementService->move(
-                $game->getPlayer(),
-                $direction,
-                $game->getDungeon()
-            );
+
+            $currentRoom = $game->getCurrentRoom();
+
+            if (!$currentRoom->hasConnection($direction)) {
+                return CommandResult::failure("You can't go {$direction->value} from here. There's a wall.");
+            }
+
+            $result = $this->movementService->move($game, $direction);
 
             if ($result->isSuccessful()) {
                 $game->incrementTurn();
-
                 $message = sprintf(
                     "You move %s. %s",
                     $direction->value,
                     $result->getLocationInfo()->getDescription()
                 );
-
                 return CommandResult::success($message);
             }
 
             return CommandResult::failure($result->getReason());
-
         } catch (\InvalidArgumentException $e) {
             // The direction string was invalid (not recognized)
             return CommandResult::failure("Invalid direction: {$this->direction}");
+        } catch (\Exception $e) {
+            return CommandResult::failure("Error moving: " . $e->getMessage());
         }
     }
 
@@ -66,10 +76,10 @@ final class MoveCommand implements CommandInterface
      *
      * The player can move only if they are alive and not currently in combat.
      *
-     * @param Game $game The current game state.
+     * @param ?Game $game The current game state.
      * @return bool True if move is allowed, false otherwise.
      */
-    public function canExecute(Game $game): bool
+    public function canExecute(?Game $game): bool
     {
         return !$game->isInCombat() && $game->getPlayer()->isAlive();
     }

@@ -18,6 +18,12 @@ use Ramsey\Uuid\UuidInterface;
  */
 class Player
 {
+
+    /**
+     * @var array<int, Item> The player's inventory items
+     */
+    private array $inventory = [];
+
     /**
      * Unique identifier for the player.
      *
@@ -91,6 +97,100 @@ class Player
         $this->health = $health;
         $this->position = $position;
         $this->attackPower = $attackPower;
+    }
+    /**
+     * Factory method to create a new player with default health, position, and attack power.
+     *
+     * @param string $name The name of the player.
+     * @return self A new Player instance.
+     */
+    public static function create(string $name): self
+    {
+        // Use the full method to create a health instance with full health (current = max)
+        $defaultHealth = Health::full(100);  // current = max = 100
+        $defaultPosition = new Position(0, 0);  // Initial position (0, 0)
+        $defaultAttackPower = 20;  // Default attack power
+
+        return new self($name, $defaultHealth, $defaultPosition, $defaultAttackPower);
+    }
+
+
+    /**
+     * Gets the player's inventory.
+     *
+     * @return array<int, Item> Array of inventory items
+     */
+    public function getInventory(): array
+    {
+        return $this->inventory;
+    }
+
+
+    /**
+     * Adds an item to the player's inventory.
+     *
+     * @param Item $item The item to add
+     * @return void
+     */
+    public function addItem(Item $item): void
+    {
+        $this->inventory[] = $item;
+    }
+
+    /**
+     * Removes an item from the player's inventory by its ID.
+     *
+     * @param UuidInterface $itemId The ID of the item to remove
+     * @return Item|null The removed item or null if not found
+     */
+    public function removeItem(UuidInterface $itemId): ?Item
+    {
+        foreach ($this->inventory as $key => $item) {
+            if ($item->getId()->equals($itemId)) {
+                $removedItem = $this->inventory[$key];
+                unset($this->inventory[$key]);
+                return $removedItem;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Checks if the player has a specific item by its ID.
+     *
+     * @param UuidInterface $itemId The ID of the item to check
+     * @return bool True if the player has the item
+     */
+    public function hasItem(UuidInterface $itemId): bool
+    {
+        foreach ($this->inventory as $item) {
+            if ($item->getId()->equals($itemId)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Gets the total count of items in the player's inventory.
+     *
+     * @return int The number of items
+     */
+    public function getInventoryCount(): int
+    {
+        return count($this->inventory);
+    }
+
+    /**
+     * Sets the player's position to a new location.
+     *
+     * @param Position $position The new position
+     */
+    public function setPosition(Position $position): void
+    {
+        $this->position = $position;
     }
 
     /**

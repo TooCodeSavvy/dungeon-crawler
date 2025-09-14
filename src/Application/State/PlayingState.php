@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace DungeonCrawler\Application\State;
 
 use DungeonCrawler\Application\Command\CommandInterface;
+use DungeonCrawler\Application\Command\DebugCommand;
 use DungeonCrawler\Application\Command\MoveCommand;
 use DungeonCrawler\Application\Command\AttackCommand;
 use DungeonCrawler\Application\Command\TakeCommand;
@@ -14,6 +15,8 @@ use DungeonCrawler\Application\Command\MapCommand;
 use DungeonCrawler\Application\Command\InventoryCommand;
 use DungeonCrawler\Application\GameEngine;
 use DungeonCrawler\Domain\Entity\Game;
+use DungeonCrawler\Domain\Service\CombatService;
+use DungeonCrawler\Domain\Service\MovementService;
 use DungeonCrawler\Infrastructure\Console\ConsoleRenderer;
 use DungeonCrawler\Infrastructure\Console\InputParser;
 
@@ -26,13 +29,27 @@ use DungeonCrawler\Infrastructure\Console\InputParser;
 class PlayingState implements GameStateInterface
 {
     /**
+     * @var MovementService Movement service for processing moves
+     */
+    private MovementService $movementService;
+
+    /**
+     * @var CombatService Combat service for handling attacks
+     */
+    private CombatService $combatService;
+
+    /**
      * @param GameEngine $engine The main game engine managing the game loop and state transitions.
      * @param StateFactory $stateFactory Factory to create other game states for transitions.
      */
     public function __construct(
         private readonly GameEngine $engine,
         private readonly StateFactory $stateFactory
-    ) {}
+    ) {
+        // Initialize services
+        $this->movementService = new MovementService();
+        $this->combatService = new CombatService();
+    }
 
     /**
      * Render the game view for the current state, including status, room description, and possible actions.
@@ -63,13 +80,27 @@ class PlayingState implements GameStateInterface
      */
     public function parseInput(string $input, InputParser $parser): ?CommandInterface
     {
+        // Direct check for 'quit' command for reliability
+        if (strtolower(trim($input)) === 'quit') {
+            return new QuitCommand();
+        }
+
+        // Check for specific save commands
+        if (strtolower(trim($input)) === 'save') {
+            return new SaveCommand(false); // Update existing save
+        }
+
+        if (strtolower(trim($input)) === 'save as' || strtolower(trim($input)) === 'saveas') {
+            return new SaveCommand(true); // Create new save
+        }
+
         $parsed = $parser->parse($input);
 
         return match ($parsed['command']) {
-            'move', 'go' => new MoveCommand($parsed['direction'] ?? ''),
-            'attack', 'fight' => new AttackCommand($parsed['target'] ?? null),
+            'move', 'go' => new MoveCommand($parsed['direction'] ?? '', $this->movementService),
+            'attack', 'fight' => new AttackCommand($parsed['target'] ?? null, $this->combatService),
             'take', 'get' => new TakeCommand($parsed['item'] ?? 'all'),
-            'save' => new SaveCommand(),
+            'save' => new SaveCommand($parsed['as'] ?? false), // Check for "as" flag
             'quit' => new QuitCommand(),
             'help' => new HelpCommand(),
             'map' => new MapCommand(),
@@ -116,7 +147,15 @@ class PlayingState implements GameStateInterface
      */
     private function getAvailableActions(Game $game): array
     {
-        $actions = ['move <direction>', 'map', 'inventory', 'save', 'quit', 'help'];
+        $actions = [
+            'move <direction>',
+            'map',
+            'inventory',
+            'save',
+            'save as', // Add the "save as" option to the list of available actions
+            'quit',
+            'help'
+        ];
 
         if ($game->getCurrentRoom()->hasTreasure()) {
             $actions[] = 'take <item|all>';

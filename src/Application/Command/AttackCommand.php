@@ -36,19 +36,30 @@ class AttackCommand implements CommandInterface
     /**
      * Executes the attack command.
      *
-     * @param Game $game The current game state.
+     * @param ?Game $game The current game state.
      * @return CommandResult Result of the attack action.
      */
-    public function execute(Game $game): CommandResult
+    public function execute(?Game $game): CommandResult
     {
-        $room = $game->getCurrentRoom();
+        if ($game === null) {
+            return CommandResult::failure("Game is not initialized.");
+        }
 
-        // Check if there's a monster present to attack
-        if (!$room->hasMonster()) {
+        // Determine the monster to attack - either in the room or blocking the path
+        $monster = null;
+        $isBlockingMonster = false;
+
+        if ($game->getCurrentRoom()->hasMonster()) {
+            $monster = $game->getCurrentRoom()->getMonster();
+        } elseif ($game->isPathBlocked()) {
+            $monster = $game->getBlockingMonster();
+            $isBlockingMonster = true;
+        }
+
+        if ($monster === null) {
             return CommandResult::failure("There's nothing to attack here!");
         }
 
-        $monster = $room->getMonster();
         $player = $game->getPlayer();
 
         // Validate the target if specified and ensure it matches the monster
@@ -75,7 +86,25 @@ class AttackCommand implements CommandInterface
 
         // If monster is defeated, handle victory logic
         if (!$monster->isAlive()) {
-            $room->removeMonster();
+            // Handle monster removal based on whether it's a blocking monster or in the current room
+            if ($isBlockingMonster) {
+                // Get the direction and the room in that direction
+                $direction = $game->getBlockedDirection();
+                $newPosition = $game->getCurrentPosition()->move($direction);
+                $targetRoom = $game->getDungeon()->getRoomAt($newPosition);
+
+                // Remove the monster from the target room
+                if ($targetRoom !== null && $targetRoom->hasMonster()) {
+                    $targetRoom->removeMonster();
+                }
+
+                // Clear the blocking state
+                $game->clearBlockingMonster();
+            } else {
+                // Remove monster from current room
+                $game->getCurrentRoom()->removeMonster();
+            }
+
             $game->endCombat();
 
             // Calculate and award score points
@@ -88,15 +117,20 @@ class AttackCommand implements CommandInterface
                 $points
             );
 
-            // Possibly drop treasure
+            // Possibly drop treasure in the current room
             if ($this->shouldDropTreasure()) {
                 $treasure = $this->generateTreasureDrop($monster);
-                $room->addTreasure($treasure);
+                $game->getCurrentRoom()->addTreasure($treasure);
+
                 $messages[] = sprintf(
                     "✨ The %s dropped %s!",
                     $monster->getName(),
                     $treasure->getName()
                 );
+            }
+
+            if ($isBlockingMonster) {
+                $messages[] = "The path is now clear!";
             }
 
             return CommandResult::success(implode("\n", $messages));
@@ -128,13 +162,30 @@ class AttackCommand implements CommandInterface
     /**
      * Checks whether this command can be executed in the current game state.
      *
-     * @param Game $game The current game state.
+     * @param ?Game $game The current game state.
      * @return bool True if the player is alive and there is a monster to attack.
      */
-    public function canExecute(Game $game): bool
+    public function canExecute(?Game $game): bool
     {
-        return $game->getPlayer()->isAlive() &&
-            $game->getCurrentRoom()->hasMonster();
+        if ($game === null) {
+            return false;
+        }
+
+        $player = $game->getPlayer();
+        $room = $game->getCurrentRoom();
+
+        // Check for monster in current room OR a blocking monster
+        $hasMonsterToAttack = $room->hasMonster() || $game->isPathBlocked();
+
+        if ($room->hasMonster()) {
+            echo "- Room monster name: " . $room->getMonster()->getName() . "\n";
+        }
+
+        if ($game->isPathBlocked()) {
+            echo "- Blocking monster name: " . $game->getBlockingMonster()->getName() . "\n";
+        }
+
+        return $player->isAlive() && $hasMonsterToAttack;
     }
 
     /**

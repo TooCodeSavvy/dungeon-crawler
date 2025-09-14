@@ -49,6 +49,23 @@ final class ConsoleRenderer
     }
 
     /**
+     * Renders a goodbye message when the game is exited.
+     *
+     * @return void
+     */
+    public function renderGoodbye(): void
+    {
+        $this->clear();
+        echo "═════════════════════════════════════════════\n";
+        echo "     Thank you for playing Dungeon Crawler!   \n";
+        echo "     ╔══════════════════════════════════════╗\n";
+        echo "     ║        DUNGEON CRAWLER v1.0          ║\n";
+        echo "     ║          See you soon!               ║\n";
+        echo "     ╚══════════════════════════════════════╝\n";
+        echo "═════════════════════════════════════════════\n";
+    }
+
+    /**
      * Displays the current game status, including player name, health, turn number, and current room.
      *
      * @param Game $game The current game state

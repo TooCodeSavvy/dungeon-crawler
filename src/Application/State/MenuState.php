@@ -6,7 +6,6 @@ namespace DungeonCrawler\Application\State;
 
 use DungeonCrawler\Application\Command\CommandInterface;
 use DungeonCrawler\Application\Command\StartGameCommand;
-use DungeonCrawler\Application\Command\LoadGameCommand;
 use DungeonCrawler\Application\Command\QuitCommand;
 use DungeonCrawler\Application\GameEngine;
 use DungeonCrawler\Domain\Entity\Game;
@@ -38,19 +37,21 @@ class MenuState implements GameStateInterface
     public function parseInput(string $input, InputParser $parser): ?CommandInterface
     {
         $input = trim($input);
-
         switch ($input) {
             case '1':
-                // For starting a new game, you might want to get player name and difficulty.
-                // For simplicity, let's assume defaults or get them later.
                 return new StartGameCommand('Player', 'normal');
 
             case '2':
-                // Load game command, might require a save ID - for now assume default or prompt later
-                return new LoadGameCommand('default_save');
+                // Transition to the load game state
+                $this->engine->transitionTo(
+                    $this->engine->getStateFactory()->createLoadGameState($this->engine)
+                );
+                return null;
 
             case '3':
-                return new QuitCommand();
+                // Directly call engine's quit method instead of using a command
+                $this->engine->quit();
+                return null;
 
             default:
                 // Invalid input returns null

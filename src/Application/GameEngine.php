@@ -5,6 +5,9 @@ namespace DungeonCrawler\Application;
 
 use DungeonCrawler\Application\Command\CommandInterface;
 use DungeonCrawler\Application\Command\CommandHandler;
+use DungeonCrawler\Application\Command\LoadGameCommand;
+use DungeonCrawler\Application\Command\QuitCommand;
+use DungeonCrawler\Application\Command\StartGameCommand;
 use DungeonCrawler\Application\State\GameStateInterface;
 use DungeonCrawler\Domain\Entity\Game;
 use DungeonCrawler\Domain\Repository\GameRepositoryInterface;
@@ -107,15 +110,49 @@ class GameEngine
      */
     private function executeCommand(CommandInterface $command): void
     {
-        // Process the command, passing current game instance (can be null)
+        // Special handling for commands that don't require an active game
+        // or that might create/load a game
+        if ($command instanceof StartGameCommand) {
+            $this->startNewGame($command->getPlayerName(), $command->getDifficulty());
+            $this->renderer->renderSuccess("New game started for " . $command->getPlayerName());
+            return;
+        }
+
+        if ($command instanceof LoadGameCommand) {
+            $this->loadGame($command->getSaveId());
+            $this->renderer->renderSuccess("Game loaded.");
+            return;
+        }
+
+        if ($command instanceof QuitCommand) {
+
+            // Execute the quit command regardless of game state
+            $result = $this->commandHandler->handle($command, $this->game);
+
+            if ($result->hasMessage()) {
+                $this->renderer->renderMessage($result->getMessage());
+            }
+
+            // Set game to null to ensure we're completely resetting
+            $this->game = null;
+
+            // Always transition to menu state on quit
+            $this->transitionTo($this->stateFactory->createMenuState($this));
+
+            return;
+        }
+        // For all other commands that require an active game
+        if ($this->game === null) {
+            throw new \RuntimeException("No active game to execute this command.");
+        }
+
+        // Execute the command with the current game
         $result = $this->commandHandler->handle($command, $this->game);
 
-        // Render any message returned by the command result
         if ($result->hasMessage()) {
             $this->renderer->renderMessage($result->getMessage());
         }
 
-        // If the command signals a state change, transition accordingly
         if ($result->requiresStateChange()) {
             $this->transitionTo($result->getNewState());
         }
@@ -176,21 +213,6 @@ class GameEngine
     }
 
     /**
-     * Saves the current game state using the repository.
-     *
-     * Throws RuntimeException if no active game is loaded.
-     */
-    public function saveGame(): void
-    {
-        if ($this->game === null) {
-            throw new \RuntimeException('No game to save');
-        }
-
-        $this->repository->save($this->game);
-        $this->renderer->renderSuccess('Game saved successfully!');
-    }
-
-    /**
      * Quits the game by stopping the main loop.
      */
     public function quit(): void
@@ -206,5 +228,21 @@ class GameEngine
     public function getGame(): ?Game
     {
         return $this->game;
+    }
+
+    /**
+     * Gets the game repository
+     */
+    public function getRepository(): GameRepositoryInterface
+    {
+        return $this->repository;
+    }
+
+    /**
+     * Gets the state factory
+     */
+    public function getStateFactory(): GameStateFactory
+    {
+        return $this->stateFactory;
     }
 }

@@ -137,6 +137,14 @@ final class Room
     /**
      * Marks the room as visited by the player.
      */
+    public function markAsVisited(): void
+    {
+        $this->visited = true;
+    }
+
+    /**
+     * Marks the room as visited by the player.
+     */
     public function enter(): void
     {
         $this->visited = true;
@@ -279,5 +287,27 @@ final class Room
     public function isEmpty(): bool
     {
         return !$this->hasMonster() && !$this->hasTreasure() && !$this->isExit;
+    }
+
+    /**
+     * Returns a human-readable name for the room.
+     *
+     * @return string The room's name/identifier.
+     */
+    public function getName(): string
+    {
+        if ($this->isExit) {
+            return "Exit Room";
+        }
+
+        if (!empty($this->description)) {
+            // Extract first part of description as a name
+            $parts = explode(' ', $this->description);
+            $prefix = array_slice($parts, 0, min(3, count($parts)));
+            return implode(' ', $prefix) . "...";
+        }
+
+        // Fallback to position-based name
+        return "Room at " . $this->position;
     }
 }
