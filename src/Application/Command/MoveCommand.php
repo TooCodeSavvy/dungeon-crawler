@@ -10,7 +10,7 @@ use DungeonCrawler\Domain\ValueObject\Direction;
 /**
  * Command to move the player in a specified direction within the dungeon.
  */
-final class MoveCommand implements CommandInterface
+class MoveCommand implements CommandInterface
 {
     /**
      * @param string $direction The direction to move (e.g., "north", "south").
@@ -43,7 +43,6 @@ final class MoveCommand implements CommandInterface
 
         try {
             $direction = Direction::fromString($this->direction);
-
             $currentRoom = $game->getCurrentRoom();
 
             if (!$currentRoom->hasConnection($direction)) {
@@ -55,11 +54,16 @@ final class MoveCommand implements CommandInterface
             if ($result->isSuccessful()) {
                 $game->incrementTurn();
                 $message = sprintf(
-                    "You move %s. %s",
+                    "You move %s.",
                     $direction->value,
-                    $result->getLocationInfo()->getDescription()
                 );
-                return CommandResult::success($message);
+
+                // Add the showMiniMap flag here
+                return new CommandResult(
+                    true,
+                    $message,
+                    ['showMiniMap' => true]
+                );
             }
 
             return CommandResult::failure($result->getReason());
@@ -69,6 +73,16 @@ final class MoveCommand implements CommandInterface
         } catch (\Exception $e) {
             return CommandResult::failure("Error moving: " . $e->getMessage());
         }
+    }
+
+    /**
+     * Gets the direction for this move command.
+     *
+     * @return Direction The direction to move in
+     */
+    public function getDirection(): Direction
+    {
+        return Direction::fromString($this->direction);
     }
 
     /**

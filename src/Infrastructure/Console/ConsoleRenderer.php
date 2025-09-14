@@ -1,8 +1,11 @@
 <?php
 declare(strict_types=1);
 namespace DungeonCrawler\Infrastructure\Console;
+use DungeonCrawler\Domain\Entity\Dungeon;
 use DungeonCrawler\Domain\Entity\Game;
 use DungeonCrawler\Domain\Entity\Room;
+use DungeonCrawler\Domain\ValueObject\Direction;
+use DungeonCrawler\Domain\ValueObject\Position;
 
 /**
  * Responsible for rendering game output to the console.
@@ -10,7 +13,7 @@ use DungeonCrawler\Domain\Entity\Room;
  * Provides methods to display game status, rooms, messages, and UI elements
  * using ANSI escape codes for color and formatting to enhance the console experience.
  */
-final class ConsoleRenderer
+class ConsoleRenderer
 {
     // ANSI escape codes for console text colors and styles
     private const COLOR_RESET = "\033[0m";
@@ -29,58 +32,6 @@ final class ConsoleRenderer
     public function clear(): void
     {
         echo "\033[2J\033[H";
-    }
-
-    /**
-     * Renders the complete game UI with optional action result message.
-     *
-     * @param ?Game $game The current game state
-     * @param string|null $actionResult The result of the player's last action
-     */
-    public function renderGameUI(?Game $game, ?string $actionResult = null): void
-    {
-        $this->clear();
-
-        // Only proceed with game-specific rendering if we have a game
-        if ($game === null) {
-            // Handle null game case - perhaps show a message
-            echo self::COLOR_RED . "No active game. Please start or load a game." . self::COLOR_RESET . "\n";
-            return;
-        }
-
-        $this->renderGameStatus($game);
-        $this->renderRoom($game->getCurrentRoom());
-
-        // If there's an action result, display it in a visually distinct section
-        if ($actionResult !== null && trim($actionResult) !== '') {
-            $this->renderActionResult($actionResult);
-        }
-
-        // Get available actions for the current game state
-        $actions = [
-            'move <direction>',
-            'map',
-            'inventory',
-            'attack',
-            'flee',
-            'save',
-            'quit',
-            'help'
-        ];
-
-        if ($game->getCurrentRoom()->hasTreasure()) {
-            $actions[] = 'take <item|all>';
-        }
-
-        if ($game->getCurrentRoom()->hasMonster() || $game->isPathBlocked()) {
-            $actions[] = 'attack';
-        }
-
-        if (count($game->getPlayer()->getInventory()) > 0) {
-            $actions[] = 'use <item>';
-        }
-
-        $this->renderAvailableActions($actions);
     }
 
     /**
@@ -300,15 +251,17 @@ final class ConsoleRenderer
     }
 
     /**
-     * Renders the dungeon map with colors and styling.
+     * Renders a dungeon map with the specified display options.
      *
-     * @param string $mapContent The generated map content to display
+     * @param Game $game The current game instance
+     * @param bool $isFullScreen Whether to render in fullscreen mode with continue prompt
      */
-    public function renderMap(string $mapContent): void
+    private function renderMapInternal(Game $game, bool $isFullScreen = false): void
     {
-        $this->clear();
+        // Generate the map content
+        $mapContent = $this->generateMapContent($game);
 
-        // Split the content into header and map parts
+        // Split the content into parts
         $lines = explode("\n", $mapContent);
         $header = array_shift($lines); // First line is the title
         $legend = array_shift($lines); // Second line is the legend
@@ -317,20 +270,183 @@ final class ConsoleRenderer
         // The rest is the actual map
         $mapDisplay = implode("\n", $lines);
 
-        // Display header
+        // Display header with styling
         echo self::COLOR_BOLD . self::COLOR_CYAN;
         echo "╔═══════════════ DUNGEON MAP ════════════════╗\n";
         echo "║                                            ║\n";
-        echo "║  " . $header . str_repeat(" ", 38 - strlen($header)) . "║\n";
-        echo "╚═══════════════════════════════════════════╝\n\n";
+        echo "║  " . $header . str_repeat(" ", max(0, 38 - strlen($header))) . "║\n";
+        echo "╚═══════════════════════════════════════════╝\n";
         echo self::COLOR_RESET;
 
-        // Display legend
-        echo $legend . "\n\n";
+        // Add extra spacing for fullscreen mode
+        if ($isFullScreen) {
+            echo "\n";
+        }
 
-        // Display the actual map with preserved formatting
+        // Display legend
+        echo $legend . "\n";
+
+        // Add extra spacing for fullscreen mode
+        if ($isFullScreen) {
+            echo "\n";
+        }
+
+        // Display the actual map
         echo $mapDisplay;
 
-        echo "\n\n" . self::COLOR_YELLOW . "Press Enter to continue..." . self::COLOR_RESET;
+        // Show prompt to continue if in fullscreen mode
+        if ($isFullScreen) {
+            echo "\n\n" . self::COLOR_YELLOW . "Press Enter to continue..." . self::COLOR_RESET;
+        } else {
+            echo "\n";
+        }
+    }
+
+    /**
+     * Renders the dungeon map in fullscreen mode with a "Press Enter to continue" prompt.
+     * This is used for the explicit 'map' command.
+     *
+     * @param Game $game The current game instance
+     */
+    public function renderFullscreenMap(Game $game): void
+    {
+        $this->renderMapInternal($game, true);
+    }
+
+    /**
+     * Renders an automatically generated map during normal gameplay.
+     * This is displayed after movement without requiring user input to continue.
+     *
+     * @param Game $game The current game instance
+     */
+    public function renderAutoMap(Game $game): void
+    {
+        $this->renderMapInternal($game, false);
+    }
+
+    /**
+     * Generates the map content as a string.
+     * This handles the actual map generation logic with colorized elements.
+     *
+     * @param Game $game The current game instance.
+     * @return string The formatted map content with header and legend.
+     */
+    private function generateMapContent(Game $game): string
+    {
+        $dungeon = $game->getDungeon();
+        $currentPosition = $game->getCurrentPosition();
+        $width = $dungeon->getWidth();
+        $height = $dungeon->getHeight();
+
+        // Start with header and legend
+        $output = "Current Dungeon Map\n";
+        $output .= "Legend: [P] Player | [X] Exit | [·] Unexplored | [O] Explored | [M] Monster | [T] Treasure\n\n";
+
+        // Define ANSI color codes for map elements
+        $colorPlayer = "\033[1;32m"; // Bold green
+        $colorExit = "\033[1;36m";   // Bold cyan
+        $colorMonster = "\033[1;31m"; // Bold red
+        $colorTreasure = "\033[1;33m"; // Bold yellow
+        $colorVisited = "\033[1;37m"; // Bold white
+        $colorUnexplored = "\033[0;37m"; // Gray
+        $colorAdjacent = "\033[0;36m"; // Cyan
+        $colorReset = "\033[0m";      // Reset
+
+        // Generate the map grid
+        for ($y = 0; $y < $height; $y++) {
+            for ($x = 0; $x < $width; $x++) {
+                $position = new Position($x, $y);
+                $room = $dungeon->getRoomAt($position);
+
+                // If no room at this position (wall)
+                if ($room === null) {
+                    $output .= '   ';
+                    continue;
+                }
+
+                // Check if the room is visible - either visited or adjacent to a visited room
+                $isVisible = $room->isVisited() || $this->isAdjacentToVisited($dungeon, $position);
+                if (!$isVisible) {
+                    $output .= $colorUnexplored . ' · ' . $colorReset;
+                    continue;
+                }
+
+                // Determine what to display for this room with colors
+                if ($position->equals($currentPosition)) {
+                    $output .= $colorPlayer . '[P]' . $colorReset; // Player position
+                } elseif ($room->isExit()) {
+                    $output .= $colorExit . '[X]' . $colorReset; // Exit
+                } elseif ($room->hasMonster() && $room->isVisited()) {
+                    $output .= $colorMonster . '[M]' . $colorReset; // Monster
+                } elseif ($room->hasTreasure() && $room->isVisited()) {
+                    $output .= $colorTreasure . '[T]' . $colorReset; // Treasure
+                } elseif ($room->isVisited()) {
+                    $output .= $colorVisited . '[O]' . $colorReset; // Visited room
+                } else {
+                    // For adjacent unvisited rooms, verify they are actually accessible
+                    // by checking if the player can move directly to them
+
+                    // Find the direction from current position to this room
+                    $directionToRoom = $this->getDirectionBetweenPositions($currentPosition, $position);
+
+                    if ($directionToRoom !== null && $dungeon->canMove($currentPosition, $directionToRoom)) {
+                        $output .= $colorAdjacent . '[ ]' . $colorReset; // Adjacent and accessible
+                    } else {
+                        // Adjacent but not directly accessible (show as unexplored)
+                        $output .= $colorUnexplored . ' · ' . $colorReset;
+                    }
+                }
+            }
+            $output .= "\n";
+        }
+
+        return $output;
+    }
+
+    /**
+     * Gets the direction from one position to another, if they are adjacent.
+     *
+     * @param Position $from Starting position
+     * @param Position $to Target position
+     * @return Direction|null Direction if positions are adjacent, null otherwise
+     */
+    private function getDirectionBetweenPositions(Position $from, Position $to): ?Direction
+    {
+        $directions = Direction::cases();
+        foreach ($directions as $direction) {
+            try {
+                $movedPosition = $from->move($direction);
+                if ($movedPosition->equals($to)) {
+                    return $direction;
+                }
+            } catch (\InvalidArgumentException $e) {
+                continue;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Helper method to check if a position is adjacent to any visited room.
+     *
+     * @param Dungeon $dungeon The dungeon
+     * @param Position $position The position to check
+     * @return bool True if adjacent to a visited room
+     */
+    private function isAdjacentToVisited(Dungeon $dungeon, Position $position): bool
+    {
+        $directions = Direction::cases();
+        foreach ($directions as $direction) {
+            try {
+                $adjacentPosition = $position->move($direction);
+                $adjacentRoom = $dungeon->getRoomAt($adjacentPosition);
+                if ($adjacentRoom !== null && $adjacentRoom->isVisited()) {
+                    return true;
+                }
+            } catch (\InvalidArgumentException $e) {
+                continue;
+            }
+        }
+        return false;
     }
 }

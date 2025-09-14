@@ -55,12 +55,13 @@ class LoadGameState implements GameStateInterface
     /**
      * Renders the load game UI showing available save files.
      *
-     * @param ConsoleRenderer $renderer The renderer to use
-     * @param Game|null $game The current game (not used in this state)
-     * @param string|null $actionResult Optional result from previous action
+     * @param ConsoleRenderer $renderer
+     * @param Game|null $game
+     * @param string|null $actionResult
+     * @param bool $showMiniMap
      * @return void
      */
-    public function render(ConsoleRenderer $renderer, ?Game $game, ?string $actionResult = null): void
+    public function render(ConsoleRenderer $renderer, ?Game $game, ?string $actionResult = null, bool $showMiniMap = false): void
     {
         // Clear the screen and display the state title
         $renderer->clear();

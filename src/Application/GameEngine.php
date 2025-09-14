@@ -44,6 +44,11 @@ class GameEngine
     private ?string $lastActionResult = null;
 
     /**
+     * @var bool Whether to show a mini-map in the next render
+     */
+    private bool $showMiniMap = true;
+
+    /**
      * Constructor.
      *
      * Initializes the GameEngine with required dependencies and sets the initial game state to the Menu.
@@ -82,10 +87,17 @@ class GameEngine
         while ($this->running) {
             try {
                 // Render the current state with any action result from the previous iteration
-                $this->currentState->render($this->renderer, $this->game, $this->lastActionResult);
+                // and show the mini-map
+                $this->currentState->render(
+                    $this->renderer,
+                    $this->game,
+                    $this->lastActionResult,
+                    $this->showMiniMap
+                );
 
-                // Clear the action result after rendering
+                // Clear the action result and mini-map flag after rendering
                 $this->lastActionResult = null;
+                $this->showMiniMap = true;
 
                 // Get player input
                 $this->renderer->renderPrompt($this->currentState);
@@ -180,29 +192,19 @@ class GameEngine
             return;
         }
 
-        // Special handling for map command
-        if ($command instanceof MapCommand) {
-            $result = $this->commandHandler->handle($command, $this->game);
-            if ($result->isSuccess()) {
-                // Use the dedicated map renderer instead of renderLine
-                $this->renderer->renderMap($result->getMessage());
-
-                // Wait for user to press Enter to continue
-                fgets(STDIN);
-            } else {
-                // Store the error message to be rendered in the next loop iteration
-                $this->lastActionResult = $result->getMessage();
-            }
-            return;
-        }
-
         // Execute the command with the current game
         $result = $this->commandHandler->handle($command, $this->game);
 
         // Store the message for the next rendering cycle
-        // but DON'T render here directly
         if ($result->hasMessage()) {
             $this->lastActionResult = $result->getMessage();
+        }
+
+        // Check if we should show a mini-map (for movement commands)
+        if ($result->hasData('showMiniMap') && $result->get('showMiniMap') === true) {
+            $this->showMiniMap = true;
+        } else {
+            $this->showMiniMap = false;
         }
 
         // Handle state transitions if needed
@@ -314,8 +316,8 @@ class GameEngine
         $result = $this->commandHandler->handle($command, $this->game);
 
         if ($result->isSuccess()) {
-            // Use the dedicated map renderer
-            $this->renderer->renderMap($result->getMessage());
+            // Use the dedicated map renderer with the game object
+            $this->renderer->renderFullscreenMap($this->game);
 
             // Wait for user to press Enter to continue
             fgets(STDIN);

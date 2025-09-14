@@ -51,7 +51,7 @@ class MovementService
                 $monster = $newRoom->getMonster();
                 $game->setBlockingMonster($monster, $direction);
                 return MovementResult::blocked(
-                    "A {$monster->getName()} blocks your path! Defeat it to continue.",
+                    "A {$monster->getName()} blocks your path! You can still move in other directions, or fight the monster.",
                     $monster
                 );
             }
