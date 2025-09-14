@@ -47,11 +47,11 @@ final class Room
     private ?Monster $monster;
 
     /**
-     * The treasure located in the room, if any.
+     * The treasures located in the room, if any.
      *
-     * @var Treasure|null
+     * @var array<Treasure>
      */
-    private ?Treasure $treasure;
+    private array $treasures = [];
 
     /**
      * Indicates if this room is the dungeon exit.
@@ -91,7 +91,13 @@ final class Room
         $this->position = $position;
         $this->description = $description ?: $this->generateDescription();
         $this->monster = $monster;
-        $this->treasure = $treasure;
+
+        // Initialize treasures array with the provided treasure if it exists
+        $this->treasures = [];
+        if ($treasure !== null) {
+            $this->treasures[] = $treasure;
+        }
+
         $this->isExit = $isExit;
 
         // Initialize all possible directions as not connected (blocked)
@@ -230,13 +236,14 @@ final class Room
     }
 
     /**
-     * Returns the treasure in the room, if any.
+     * Returns the first treasure in the room, if any.
+     * This is for backward compatibility with code that expects a single treasure.
      *
-     * @return Treasure|null The treasure or null if none.
+     * @return Treasure|null The first treasure or null if none.
      */
     public function getTreasure(): ?Treasure
     {
-        return $this->treasure;
+        return $this->treasures[0] ?? null;
     }
 
     /**
@@ -270,13 +277,64 @@ final class Room
     }
 
     /**
-     * Checks if the room currently contains treasure.
+     * Checks if the room currently contains any treasures.
      *
-     * @return bool True if treasure is present.
+     * @return bool True if any treasures are present.
      */
     public function hasTreasure(): bool
     {
-        return $this->treasure !== null;
+        return !empty($this->treasures);
+    }
+
+    /**
+     * Returns all treasures in the room.
+     *
+     * @return array<Treasure> Array of treasures.
+     */
+    public function getTreasures(): array
+    {
+        return $this->treasures;
+    }
+
+    /**
+     * Removes and returns treasures from the room.
+     *
+     * @param string|null $itemName Optional name to filter treasures (null means take all)
+     * @return array<Treasure> Array of removed treasures.
+     */
+    public function takeTreasure(?string $itemName = null): array
+    {
+        if ($itemName === null) {
+            // Take all treasures
+            $treasures = $this->treasures;
+            $this->treasures = [];
+            return $treasures;
+        }
+
+        // Take specific treasure(s) by name
+        $taken = [];
+        $remaining = [];
+
+        foreach ($this->treasures as $treasure) {
+            if (stripos($treasure->getName(), $itemName) !== false) {
+                $taken[] = $treasure;
+            } else {
+                $remaining[] = $treasure;
+            }
+        }
+
+        $this->treasures = $remaining;
+        return $taken;
+    }
+
+    /**
+     * Adds a treasure to the room.
+     *
+     * @param Treasure $treasure The treasure to add to the room.
+     */
+    public function addTreasure(Treasure $treasure): void
+    {
+        $this->treasures[] = $treasure;
     }
 
     /**

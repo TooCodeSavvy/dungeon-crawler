@@ -155,24 +155,48 @@ final class ConsoleRenderer
         // Display room name in cyan with location icon
         echo self::COLOR_CYAN . "📍 " . $room->getName() . self::COLOR_RESET . "\n";
         echo $room->getDescription() . "\n\n";
+
         // If a monster is present, display its name and health bar in red
         if ($room->hasMonster()) {
             $monster = $room->getMonster();
             echo self::COLOR_RED . "⚔️  A " . $monster->getName() . " blocks your path!" . self::COLOR_RESET . "\n";
             echo $this->createHealthBar($monster->getHealth()->getValue(), $monster->getHealth()->getMax()) . "\n";
         }
-        // If treasures are present, list them with a yellow sparkle icon
+
+        // If treasures are present, list them with appropriate styling
         if ($room->hasTreasure()) {
-            echo self::COLOR_YELLOW . "✨ You see treasure here!" . self::COLOR_RESET . "\n";
-            foreach ($room->getTreasures() as $treasure) {
-                echo "   • " . $treasure->getDisplayInfo() . "\n";
+            $treasures = $room->getTreasures();
+
+            // Adjust the message based on the number of treasures
+            if (count($treasures) === 1) {
+                echo self::COLOR_YELLOW . "✨ You see a treasure here:" . self::COLOR_RESET . "\n";
+            } else {
+                echo self::COLOR_YELLOW . "✨ You see " . count($treasures) . " treasures here:" . self::COLOR_RESET . "\n";
             }
+
+            // Display each treasure with its own icon, color, and details
+            foreach ($treasures as $treasure) {
+                $type = $treasure->getType();
+                $icon = $type->getIcon();
+                $color = $type->getColor();
+
+                // Display treasure with type-specific color
+                echo "   " . $icon . " " . $color . $treasure->getName() . self::COLOR_RESET;
+
+                // Display info
+                $displayInfo = $treasure->getDisplayInfo();
+                echo " (" . $displayInfo['rarity'] . ")\n";
+
+                // Show description with a slight indent
+                echo "      " . $displayInfo['description'] . "\n";
+            }
+            echo "\n";
         }
+
         // Indicate if this room is the exit in green with a door icon
         if ($room->isExit()) {
             echo self::COLOR_GREEN . "🚪 This is the exit!" . self::COLOR_RESET . "\n";
         }
-        echo "\n";
     }
 
     /**

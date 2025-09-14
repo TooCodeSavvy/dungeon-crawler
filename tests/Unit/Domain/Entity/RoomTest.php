@@ -142,14 +142,19 @@ final class RoomTest extends TestCase
             treasure: $treasure
         );
 
-        $this->assertSame($treasure, $room->getTreasure());
+        // Check that treasure was properly added to the treasures array
+        $this->assertCount(1, $room->getTreasures());
+        $this->assertSame($treasure, $room->getTreasure()); // First treasure should be our mock
 
-        $removed = $room->removeTreasure();
+        // With the new implementation, removeTreasure returns an array of treasures
+        $removed = $room->takeTreasure();
 
-        $this->assertSame($treasure, $removed);
+        // Check that we got our treasure back and the room is now empty
+        $this->assertCount(1, $removed);
+        $this->assertSame($treasure, $removed[0]);
+        $this->assertCount(0, $room->getTreasures());
         $this->assertNull($room->getTreasure());
     }
-
     /**
      * Tests that hasMonster returns true only if the monster exists and is alive.
      */
