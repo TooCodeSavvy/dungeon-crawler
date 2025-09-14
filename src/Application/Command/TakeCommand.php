@@ -33,11 +33,15 @@ final class TakeCommand implements CommandInterface
     /**
      * Executes the take command.
      *
-     * @param Game $game Current game instance.
+     * @param ?Game $game Current game instance.
      * @return CommandResult Result object with success or failure and messages.
      */
-    public function execute(Game $game): CommandResult
+    public function execute(?Game $game): CommandResult
     {
+        if ($game === null) {
+            return new CommandResult(false, "Game is not initialized.");
+        }
+
         $room = $game->getCurrentRoom();
         $player = $game->getPlayer();
 
@@ -133,11 +137,16 @@ final class TakeCommand implements CommandInterface
     /**
      * Determines if the command can currently be executed.
      *
-     * @param Game $game Current game instance.
+     * @param ?Game $game Current game instance.
      * @return bool True if player is alive and not in combat.
      */
-    public function canExecute(Game $game): bool
+    public function canExecute(?Game $game): bool
     {
+        // Handle null game case
+        if ($game === null) {
+            return false;
+        }
+
         return $game->getPlayer()->isAlive() && !$game->isInCombat();
     }
 

@@ -49,6 +49,7 @@ class MovementService
             // Check if there's a monster blocking the way
             if ($newRoom->hasMonster()) {
                 $monster = $newRoom->getMonster();
+                $game->setBlockingMonster($monster, $direction);
                 return MovementResult::blocked(
                     "A {$monster->getName()} blocks your path! Defeat it to continue.",
                     $monster

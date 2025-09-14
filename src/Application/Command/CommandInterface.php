@@ -21,10 +21,10 @@ interface CommandInterface
     /**
      * Determines if the command is currently allowed to be executed.
      *
-     * @param Game $game The current game instance.
+     * @param ?Game $game The current game instance.
      * @return bool True if the command can be executed, false otherwise.
      */
-    public function canExecute(Game $game): bool;
+    public function canExecute(?Game $game): bool;
 
     /**
      * Gets the name of the command.

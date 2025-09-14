@@ -67,10 +67,10 @@ class InventoryCommand implements CommandInterface
      *
      * This can always be executed when a game is active.
      *
-     * @param Game $game The current game instance.
+     * @param ?Game $game The current game instance.
      * @return bool Always true as inventory can be viewed anytime.
      */
-    public function canExecute(Game $game): bool
+    public function canExecute(?Game $game): bool
     {
         return true;
     }

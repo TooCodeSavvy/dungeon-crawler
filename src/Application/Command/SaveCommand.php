@@ -71,10 +71,10 @@ class SaveCommand implements CommandInterface
     /**
      * Determines if the save command can be executed.
      *
-     * @param Game $game The current game instance.
+     * @param ?Game $game The current game instance.
      * @return bool Always true as games can be saved anytime.
      */
-    public function canExecute(Game $game): bool
+    public function canExecute(?Game $game): bool
     {
         return true;
     }

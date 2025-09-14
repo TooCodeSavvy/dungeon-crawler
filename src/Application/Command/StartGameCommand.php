@@ -64,10 +64,10 @@ class StartGameCommand implements CommandInterface
      * Typically, starting a new game is always allowed when no game is active.
      * This method could be extended to add more sophisticated checks.
      *
-     * @param Game $game The current game instance.
+     * @param ?Game $game The current game instance.
      * @return bool True if command can be executed, false otherwise.
      */
-    public function canExecute(Game $game): bool
+    public function canExecute(?Game $game): bool
     {
         return true;
     }

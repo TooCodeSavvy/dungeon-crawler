@@ -65,7 +65,14 @@ class CommandHandler
      */
     public function handle(CommandInterface $command, ?Game $game): CommandResult
     {
-        if ($command->canExecute($game)) {
+        if ($game === null) {
+            return new CommandResult(false, 'No active game.');
+        }
+
+        // Debug information to identify the issue
+        $canExecute = $command->canExecute($game);
+
+        if ($canExecute) {
             return $command->execute($game);
         }
 

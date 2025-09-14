@@ -53,10 +53,10 @@ class LoadGameCommand implements CommandInterface
      * You may want to check if the save ID exists or if the game state
      * allows loading at this time.
      *
-     * @param Game $game The current game instance.
+     * @param ?Game $game The current game instance.
      * @return bool True if the load command can be executed.
      */
-    public function canExecute(Game $game): bool
+    public function canExecute(?Game $game): bool
     {
         // Add additional checks if needed, e.g., save existence
         return true;

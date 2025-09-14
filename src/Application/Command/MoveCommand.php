@@ -37,9 +37,6 @@ final class MoveCommand implements CommandInterface
             return CommandResult::failure("No active game.");
         }
 
-        // Debug the direction received
-        echo "DEBUG: MoveCommand received direction: '{$this->direction}'\n";
-
         if (empty($this->direction)) {
             return CommandResult::failure("You need to specify a direction (north, south, east, west).");
         }
@@ -47,14 +44,7 @@ final class MoveCommand implements CommandInterface
         try {
             $direction = Direction::fromString($this->direction);
 
-            // Debug the parsed direction
-            echo "DEBUG: Parsed into Direction: {$direction->value}\n";
-
             $currentRoom = $game->getCurrentRoom();
-
-            // Debug room connections
-            echo "DEBUG: Room has connection in {$direction->value} direction: " .
-                ($currentRoom->hasConnection($direction) ? "Yes" : "No") . "\n";
 
             if (!$currentRoom->hasConnection($direction)) {
                 return CommandResult::failure("You can't go {$direction->value} from here. There's a wall.");
@@ -74,14 +64,9 @@ final class MoveCommand implements CommandInterface
 
             return CommandResult::failure($result->getReason());
         } catch (\InvalidArgumentException $e) {
-            // Debug the exception
-            echo "DEBUG: Exception: " . $e->getMessage() . "\n";
-
             // The direction string was invalid (not recognized)
             return CommandResult::failure("Invalid direction: {$this->direction}");
         } catch (\Exception $e) {
-            // Log the exception details
-            echo "DEBUG: Unexpected exception: " . $e->getMessage() . "\n";
             return CommandResult::failure("Error moving: " . $e->getMessage());
         }
     }
@@ -91,10 +76,10 @@ final class MoveCommand implements CommandInterface
      *
      * The player can move only if they are alive and not currently in combat.
      *
-     * @param Game $game The current game state.
+     * @param ?Game $game The current game state.
      * @return bool True if move is allowed, false otherwise.
      */
-    public function canExecute(Game $game): bool
+    public function canExecute(?Game $game): bool
     {
         return !$game->isInCombat() && $game->getPlayer()->isAlive();
     }

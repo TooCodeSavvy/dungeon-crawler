@@ -31,10 +31,10 @@ class QuitCommand implements CommandInterface
      *
      * This can always be executed.
      *
-     * @param Game $game The current game instance.
+     * @param ?Game $game The current game instance.
      * @return bool Always true as quitting is always available.
      */
-    public function canExecute(Game $game): bool
+    public function canExecute(?Game $game): bool
     {
         return true;
     }

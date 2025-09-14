@@ -51,7 +51,7 @@ class DebugCommand implements CommandInterface
     /**
      * @inheritDoc
      */
-    public function canExecute(Game $game): bool
+    public function canExecute(?Game $game): bool
     {
         return true;
     }

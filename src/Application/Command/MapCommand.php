@@ -42,10 +42,10 @@ class MapCommand implements CommandInterface
     /**
      * Determines if the map command can be executed.
      *
-     * @param Game $game The current game instance.
+     * @param ?Game $game The current game instance.
      * @return bool Always true as map can be viewed anytime during gameplay.
      */
-    public function canExecute(Game $game): bool
+    public function canExecute(?Game $game): bool
     {
         // Map can always be viewed in normal gameplay
         return true;
