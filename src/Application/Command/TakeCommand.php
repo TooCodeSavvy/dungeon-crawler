@@ -4,7 +4,9 @@ declare(strict_types=1);
 namespace DungeonCrawler\Application\Command;
 
 use DungeonCrawler\Domain\Entity\Game;
+use DungeonCrawler\Domain\Entity\Player;
 use DungeonCrawler\Domain\Entity\Treasure;
+use DungeonCrawler\Domain\Entity\TreasureType;
 
 /**
  * Command to take one or more treasures from the current room.
@@ -13,7 +15,7 @@ use DungeonCrawler\Domain\Entity\Treasure;
  * Applies immediate effects of treasures such as healing or weapon upgrades,
  * updates player inventory and game score, and generates appropriate messages.
  */
-final class TakeCommand implements CommandInterface
+class TakeCommand implements CommandInterface
 {
     /**
      * @var string Name or alias of the item to take, or 'all' to take everything.
@@ -41,38 +43,24 @@ final class TakeCommand implements CommandInterface
         if ($game === null) {
             return new CommandResult(false, "Game is not initialized.");
         }
-
         $room = $game->getCurrentRoom();
         $player = $game->getPlayer();
-
         // Check if there is any treasure available in the room
         if (!$room->hasTreasure()) {
             return CommandResult::failure("There's no treasure here to take.");
         }
 
-        $availableTreasures = $room->getTreasures();
-        $treasuresToTake = [];
-        $messages = [];
-
         // Determine treasures to take: all or specific item
         if ($this->itemName === 'all' || $this->itemName === '') {
-            // Take all treasures and clear them from the room
-            $treasuresToTake = $availableTreasures;
-            $room->removeAllTreasures();
+            // Take all treasures
+            $treasuresToTake = $room->takeTreasure(null);
         } else {
-            // Find a matching treasure by name/type/alias and remove it from the room
-            $found = false;
-            foreach ($availableTreasures as $key => $treasure) {
-                if ($this->matchesTreasure($treasure, $this->itemName)) {
-                    $treasuresToTake[] = $treasure;
-                    $room->removeTreasure($key);
-                    $found = true;
-                    break; // Only take the first matching item
-                }
-            }
+            // Take specific treasure(s) matching the name
+            $treasuresToTake = $room->takeTreasure($this->itemName);
 
-            if (!$found) {
+            if (empty($treasuresToTake)) {
                 // Item not found, inform player with list of available items
+                $availableTreasures = $room->getTreasures();
                 $itemList = $this->formatAvailableItems($availableTreasures);
                 return CommandResult::failure(
                     sprintf(
@@ -87,13 +75,12 @@ final class TakeCommand implements CommandInterface
         $totalValue = 0;
         $totalHealth = 0;
         $weaponUpgrade = 0;
+        $messages = [];
 
         // Process effects and add treasures to inventory
         foreach ($treasuresToTake as $treasure) {
             $player->addToInventory($treasure);
-
             $effect = $this->applyTreasureEffect($treasure, $player);
-
             if ($effect['health'] > 0) {
                 $totalHealth += $effect['health'];
                 $messages[] = sprintf(
@@ -102,7 +89,6 @@ final class TakeCommand implements CommandInterface
                     $effect['health']
                 );
             }
-
             if ($effect['attack'] > 0) {
                 $weaponUpgrade += $effect['attack'];
                 $messages[] = sprintf(
@@ -111,7 +97,6 @@ final class TakeCommand implements CommandInterface
                     $effect['attack']
                 );
             }
-
             $totalValue += $treasure->getValue();
         }
 
@@ -210,10 +195,10 @@ final class TakeCommand implements CommandInterface
      * Applies immediate effects of a treasure to the player.
      *
      * @param Treasure $treasure Treasure whose effect to apply.
-     * @param \DungeonCrawler\Domain\Entity\Player $player Player to apply effects on.
+     * @param Player $player Player to apply effects on.
      * @return array Associative array with 'health' and 'attack' keys indicating effect magnitudes.
      */
-    private function applyTreasureEffect(Treasure $treasure, \DungeonCrawler\Domain\Entity\Player $player): array
+    private function applyTreasureEffect(Treasure $treasure, Player $player): array
     {
         $effect = ['health' => 0, 'attack' => 0];
 
@@ -322,10 +307,10 @@ final class TakeCommand implements CommandInterface
     /**
      * Returns a summary of the player's current inventory.
      *
-     * @param \DungeonCrawler\Domain\Entity\Player $player Player whose inventory to summarize.
+     * @param Player $player Player whose inventory to summarize.
      * @return string Inventory summary message.
      */
-    private function getInventoryStatus(\DungeonCrawler\Domain\Entity\Player $player): string
+    private function getInventoryStatus(Player $player): string
     {
         $inventory = $player->getInventory();
         if (empty($inventory)) {
@@ -338,19 +323,40 @@ final class TakeCommand implements CommandInterface
         $artifactCount = 0;
 
         foreach ($inventory as $item) {
-            switch ($item->getType()->value) {
-                case 'Gold':
-                    $goldCount += $item->getValue();
-                    break;
-                case 'Health Potion':
-                    $potionCount++;
-                    break;
-                case 'Weapon':
-                    $weaponCount++;
-                    break;
-                case 'Artifact':
-                    $artifactCount++;
-                    break;
+            if ($item instanceof Treasure) {
+                // Handle Treasure objects
+                $type = $item->getType();
+                switch ($type) {
+                    case TreasureType::GOLD:
+                        $goldCount += $item->getValue();
+                        break;
+                    case TreasureType::HEALTH_POTION:
+                        $potionCount++;
+                        break;
+                    case TreasureType::WEAPON:
+                        $weaponCount++;
+                        break;
+                    case TreasureType::ARTIFACT:
+                        $artifactCount++;
+                        break;
+                }
+            } else {
+                // Handle Item objects
+                $type = $item->getType();
+                switch ($type) {
+                    case 'gold':
+                        $goldCount += $item->getValue();
+                        break;
+                    case 'potion':
+                        $potionCount++;
+                        break;
+                    case 'weapon':
+                        $weaponCount++;
+                        break;
+                    case 'artifact':
+                        $artifactCount++;
+                        break;
+                }
             }
         }
 

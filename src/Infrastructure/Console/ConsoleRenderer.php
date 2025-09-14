@@ -76,6 +76,10 @@ final class ConsoleRenderer
             $actions[] = 'attack';
         }
 
+        if (count($game->getPlayer()->getInventory()) > 0) {
+            $actions[] = 'use <item>';
+        }
+
         $this->renderAvailableActions($actions);
     }
 

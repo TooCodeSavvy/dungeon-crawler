@@ -125,6 +125,54 @@ class Player
         return $this->inventory;
     }
 
+    /**
+     * Adds a treasure to the player's inventory by converting it to an Item.
+     *
+     * @param Treasure $treasure The treasure to add to inventory
+     * @return void
+     */
+    public function addToInventory(Treasure $treasure): void
+    {
+        // Convert the Treasure to an Item and add it to inventory
+        $item = $this->convertTreasureToItem($treasure);
+        $this->addItem($item);
+    }
+
+    /**
+     * Sets the player's inventory.
+     *
+     * @param array $inventory The new inventory array
+     * @return void
+     */
+    public function setInventory(array $inventory): void
+    {
+        $this->inventory = $inventory;
+    }
+
+    /**
+     * Converts a Treasure object to an Item object.
+     *
+     * @param Treasure $treasure The treasure to convert
+     * @return Item The resulting item
+     */
+    private function convertTreasureToItem(Treasure $treasure): Item
+    {
+        $type = match($treasure->getType()) {
+            TreasureType::GOLD => 'gold',
+            TreasureType::HEALTH_POTION => 'potion',
+            TreasureType::WEAPON => 'weapon',
+            TreasureType::ARTIFACT => 'artifact',
+        };
+
+        return new Item(
+            $treasure->getId(), // Reuse the same ID
+            $treasure->getName(),
+            $treasure->getDescription(),
+            $type,
+            $treasure->getValue()
+        );
+    }
+
 
     /**
      * Adds an item to the player's inventory.

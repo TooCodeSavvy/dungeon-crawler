@@ -49,6 +49,7 @@ class CommandHandler
             MoveCommand::class   => fn(MoveCommand $cmd, Game $game): CommandResult => $this->handleMove($cmd, $game),
             AttackCommand::class => fn(AttackCommand $cmd, Game $game): CommandResult => $this->handleAttack($cmd, $game),
             TakeCommand::class   => fn(TakeCommand $cmd, Game $game): CommandResult => $this->handleTake($cmd, $game),
+            UseCommand::class    => fn(UseCommand $cmd, Game $game): CommandResult => $this->handleUse($cmd, $game),
         ];
     }
 
