@@ -6,6 +6,7 @@ namespace DungeonCrawler\Application;
 use DungeonCrawler\Application\Command\CommandInterface;
 use DungeonCrawler\Application\Command\CommandHandler;
 use DungeonCrawler\Application\Command\LoadGameCommand;
+use DungeonCrawler\Application\Command\MapCommand;
 use DungeonCrawler\Application\Command\QuitCommand;
 use DungeonCrawler\Application\Command\StartGameCommand;
 use DungeonCrawler\Application\State\GameStateInterface;
@@ -138,6 +139,12 @@ class GameEngine
             return;
         }
 
+        // Special handling for MapCommand
+        if ($command instanceof MapCommand) {
+            $this->handleMapCommand($command);
+            return;
+        }
+
         // Special handling for commands that don't require an active game
         // or that might create/load a game
         if ($command instanceof StartGameCommand) {
@@ -177,18 +184,13 @@ class GameEngine
         if ($command instanceof MapCommand) {
             $result = $this->commandHandler->handle($command, $this->game);
             if ($result->isSuccess()) {
-                // Clear screen and show the map
-                $this->renderer->clear();
-                $this->renderer->renderLine($result->getMessage());
-                // Wait for user to press Enter to continue
-                echo "Press Enter to continue...";
-                fgets(STDIN);
+                // Use the dedicated map renderer instead of renderLine
+                $this->renderer->renderMap($result->getMessage());
 
-                // Store the result message to be rendered in the next loop iteration
-                // but DON'T render here
+                // Wait for user to press Enter to continue
+                fgets(STDIN);
             } else {
                 // Store the error message to be rendered in the next loop iteration
-                // but DON'T render here
                 $this->lastActionResult = $result->getMessage();
             }
             return;
@@ -295,5 +297,33 @@ class GameEngine
     public function getStateFactory(): GameStateFactory
     {
         return $this->stateFactory;
+    }
+
+    /**
+     * Handles the map command with special rendering.
+     *
+     * @param MapCommand $command The map command to execute.
+     */
+    private function handleMapCommand(MapCommand $command): void
+    {
+        if ($this->game === null) {
+            $this->lastActionResult = "No active game to display map for.";
+            return;
+        }
+
+        $result = $this->commandHandler->handle($command, $this->game);
+
+        if ($result->isSuccess()) {
+            // Use the dedicated map renderer
+            $this->renderer->renderMap($result->getMessage());
+
+            // Wait for user to press Enter to continue
+            fgets(STDIN);
+
+            // Don't set lastActionResult for map command
+        } else {
+            // Only set lastActionResult for error cases
+            $this->lastActionResult = $result->getMessage();
+        }
     }
 }
