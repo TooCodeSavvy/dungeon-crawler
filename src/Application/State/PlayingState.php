@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace DungeonCrawler\Application\State;
 
 use DungeonCrawler\Application\Command\CommandInterface;
+use DungeonCrawler\Application\Command\EquipCommand;
 use DungeonCrawler\Application\Command\MoveCommand;
 use DungeonCrawler\Application\Command\AttackCommand;
 use DungeonCrawler\Application\Command\TakeCommand;
@@ -15,6 +16,8 @@ use DungeonCrawler\Application\Command\InventoryCommand;
 use DungeonCrawler\Application\Command\UseCommand;
 use DungeonCrawler\Application\GameEngine;
 use DungeonCrawler\Domain\Entity\Game;
+use DungeonCrawler\Domain\Entity\Treasure;
+use DungeonCrawler\Domain\Entity\TreasureType;
 use DungeonCrawler\Domain\Service\CombatService;
 use DungeonCrawler\Domain\Service\MovementService;
 use DungeonCrawler\Infrastructure\Console\ConsoleRenderer;
@@ -179,6 +182,24 @@ class PlayingState implements GameStateInterface
 
         if ($game->getCurrentRoom()->hasTreasure()) {
             $actions[] = 'take <item|all>';
+        }
+
+        // Check if player has any items
+        if (!empty($game->getPlayer()->getInventory())) {
+            $actions[] = 'use <item>';
+
+            // Check if player has any weapons to equip
+            $hasWeapons = false;
+            foreach ($game->getPlayer()->getInventory() as $item) {
+                if ($item instanceof Treasure && $item->getType() === TreasureType::WEAPON) {
+                    $hasWeapons = true;
+                    break;
+                }
+            }
+
+            if ($hasWeapons) {
+                $actions[] = 'equip <weapon>';
+            }
         }
 
         return $actions;
