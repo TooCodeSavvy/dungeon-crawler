@@ -23,16 +23,14 @@ class StateFactory
     }
 
     /**
-     * Creates a game over state.
+     * Creates a new GameOverState with victory or defeat.
      *
-     * @param GameEngine $engine The game engine instance.
-     * @param bool $victory Whether the game ended in victory or defeat.
-     * @return GameStateInterface
+     * @param GameEngine $engine The game engine
+     * @param bool $victory Whether this is a victory (true) or defeat (false)
+     * @return GameOverState The game over state
      */
-    public function createGameOverState(GameEngine $engine, bool $victory): GameStateInterface
+    public function createGameOverState(GameEngine $engine, bool $victory): GameOverState
     {
-        // This is a placeholder. You'll need to implement the GameOverState class
-        // return new GameOverState($engine, $this, $victory);
-        throw new \RuntimeException('GameOverState not yet implemented');
+        return new GameOverState($engine, $this, $victory);
     }
 }

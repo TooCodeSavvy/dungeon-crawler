@@ -144,13 +144,13 @@ class PlayingState implements GameStateInterface
             return $this->stateFactory->createCombatState($this->engine);
         }
 
-        // Transition to game over if player is dead
+        // Defeat: Player is dead
         if (!$game->getPlayer()->isAlive()) {
             return $this->stateFactory->createGameOverState($this->engine, false);
         }
 
-        // Transition to victory game over if player reached exit without monsters
-        if ($game->getCurrentRoom()->isExit() && !$game->getCurrentRoom()->hasMonster()) {
+        // Victory: Player reached the exit room
+        if ($game->getCurrentRoom()->isExit()) {
             return $this->stateFactory->createGameOverState($this->engine, true);
         }
 
