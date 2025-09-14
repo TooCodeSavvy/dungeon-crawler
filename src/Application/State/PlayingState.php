@@ -117,6 +117,7 @@ class PlayingState implements GameStateInterface
             'attack', 'fight' => new AttackCommand($parsed['target'] ?? null, $this->combatService),
             'take', 'get' => new TakeCommand($parsed['item'] ?? 'all'),
             'use', 'consume' => new UseCommand($parsed['item'] ?? ''),
+            'equip', 'wear' => new EquipCommand($parsed['item'] ?? ''),
             'save' => new SaveCommand($parsed['as'] ?? false), // Check for "as" flag
             'quit' => new QuitCommand(),
             'help' => new HelpCommand(),
