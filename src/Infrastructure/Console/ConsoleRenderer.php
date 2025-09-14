@@ -76,6 +76,10 @@ final class ConsoleRenderer
             $actions[] = 'attack';
         }
 
+        if (count($game->getPlayer()->getInventory()) > 0) {
+            $actions[] = 'use <item>';
+        }
+
         $this->renderAvailableActions($actions);
     }
 
@@ -304,15 +308,29 @@ final class ConsoleRenderer
     {
         $this->clear();
 
-        // Draw a styled border around the map
+        // Split the content into header and map parts
+        $lines = explode("\n", $mapContent);
+        $header = array_shift($lines); // First line is the title
+        $legend = array_shift($lines); // Second line is the legend
+        array_shift($lines); // Remove the blank line after the legend
+
+        // The rest is the actual map
+        $mapDisplay = implode("\n", $lines);
+
+        // Display header
         echo self::COLOR_BOLD . self::COLOR_CYAN;
         echo "╔═══════════════ DUNGEON MAP ════════════════╗\n";
-        echo "╚═══════════════════════════════════════════╝\n";
+        echo "║                                            ║\n";
+        echo "║  " . $header . str_repeat(" ", 38 - strlen($header)) . "║\n";
+        echo "╚═══════════════════════════════════════════╝\n\n";
         echo self::COLOR_RESET;
 
-        // Display the map content
-        echo $mapContent;
+        // Display legend
+        echo $legend . "\n\n";
 
-        echo "\n" . self::COLOR_YELLOW . "Press Enter to continue..." . self::COLOR_RESET;
+        // Display the actual map with preserved formatting
+        echo $mapDisplay;
+
+        echo "\n\n" . self::COLOR_YELLOW . "Press Enter to continue..." . self::COLOR_RESET;
     }
 }

@@ -22,22 +22,21 @@ class MapCommand implements CommandInterface
     public function execute(?Game $game): CommandResult
     {
         if ($game === null) {
-            return new CommandResult(false, "No active game to display map for.");
+            return CommandResult::failure("No active game to display map for.");
         }
 
         try {
             // Generate the map visualization as a string
             $map = $this->generateMapVisualization($game);
 
-            // Return a result with the map as the message
-            return new CommandResult(
-                true,
-                "Current Dungeon Map:\n" .
+            // Return a result with the map as the message, with clean formatting
+            return CommandResult::success(
+                "Current Dungeon Map\n" .
                 "Legend: [P] Player | [X] Exit | [·] Unexplored | [O] Explored | [M] Monster | [T] Treasure\n\n" .
                 $map
             );
         } catch (\Exception $e) {
-            return new CommandResult(false, "Failed to generate map: " . $e->getMessage());
+            return CommandResult::failure("Failed to generate map: " . $e->getMessage());
         }
     }
 

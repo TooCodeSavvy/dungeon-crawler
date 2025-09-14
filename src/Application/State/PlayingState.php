@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace DungeonCrawler\Application\State;
 
 use DungeonCrawler\Application\Command\CommandInterface;
-use DungeonCrawler\Application\Command\DebugCommand;
 use DungeonCrawler\Application\Command\MoveCommand;
 use DungeonCrawler\Application\Command\AttackCommand;
 use DungeonCrawler\Application\Command\TakeCommand;
@@ -13,6 +12,7 @@ use DungeonCrawler\Application\Command\QuitCommand;
 use DungeonCrawler\Application\Command\HelpCommand;
 use DungeonCrawler\Application\Command\MapCommand;
 use DungeonCrawler\Application\Command\InventoryCommand;
+use DungeonCrawler\Application\Command\UseCommand;
 use DungeonCrawler\Application\GameEngine;
 use DungeonCrawler\Domain\Entity\Game;
 use DungeonCrawler\Domain\Service\CombatService;
@@ -107,6 +107,7 @@ class PlayingState implements GameStateInterface
             'move', 'go' => new MoveCommand($parsed['direction'] ?? '', $this->movementService),
             'attack', 'fight' => new AttackCommand($parsed['target'] ?? null, $this->combatService),
             'take', 'get' => new TakeCommand($parsed['item'] ?? 'all'),
+            'use', 'consume' => new UseCommand($parsed['item'] ?? ''),
             'save' => new SaveCommand($parsed['as'] ?? false), // Check for "as" flag
             'quit' => new QuitCommand(),
             'help' => new HelpCommand(),
