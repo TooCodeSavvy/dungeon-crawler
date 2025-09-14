@@ -56,10 +56,11 @@ class PlayingState implements GameStateInterface
      *
      * @param ConsoleRenderer $renderer Renderer for outputting game information to the console.
      * @param Game|null $game Current game instance, cannot be null in playing state.
+     * @param string|null $actionResult Optional result from the last action to display
      *
      * @throws \RuntimeException If no game is loaded when rendering.
      */
-    public function render(ConsoleRenderer $renderer, ?Game $game): void
+    public function render(ConsoleRenderer $renderer, ?Game $game, ?string $actionResult = null): void
     {
         if ($game === null) {
             throw new \RuntimeException('No game in playing state');
@@ -68,6 +69,12 @@ class PlayingState implements GameStateInterface
         $renderer->clear();
         $renderer->renderGameStatus($game);
         $renderer->renderRoom($game->getCurrentRoom());
+
+        // If there's an action result, display it in a visually distinct section
+        if ($actionResult !== null && trim($actionResult) !== '') {
+            $renderer->renderActionResult($actionResult);
+        }
+
         $renderer->renderAvailableActions($this->getAvailableActions($game));
     }
 
@@ -152,7 +159,9 @@ class PlayingState implements GameStateInterface
             'map',
             'inventory',
             'save',
-            'save as', // Add the "save as" option to the list of available actions
+            'attack',
+            'flee',
+            'take',
             'quit',
             'help'
         ];

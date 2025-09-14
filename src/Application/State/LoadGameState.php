@@ -55,15 +55,25 @@ class LoadGameState implements GameStateInterface
     /**
      * Renders the load game UI showing available save files.
      *
-     * @param ConsoleRenderer $renderer The renderer to use for displaying output
-     * @param Game|null $game The current game instance (not used in this state)
-     *
+     * @param ConsoleRenderer $renderer The renderer to use
+     * @param Game|null $game The current game (not used in this state)
+     * @param string|null $actionResult Optional result from previous action
      * @return void
      */
-    public function render(ConsoleRenderer $renderer, ?Game $game): void
+    public function render(ConsoleRenderer $renderer, ?Game $game, ?string $actionResult = null): void
     {
         // Clear the screen and display the state title
         $renderer->clear();
+
+        // Display any action result if provided
+        if ($actionResult !== null && !empty(trim($actionResult))) {
+            if (str_contains(strtolower($actionResult), 'error')) {
+                $renderer->renderError($actionResult);
+            } else {
+                $renderer->renderMessage($actionResult);
+            }
+        }
+
         $renderer->renderLine("=== Load Game ===");
 
         // Refresh the list of saves from the repository
@@ -92,7 +102,6 @@ class LoadGameState implements GameStateInterface
         foreach ($this->saves as $saveId => $save) {
             // Format the timestamp into a human-readable relative time
             $relativeTime = $this->getRelativeTimeString($save['saved_at']);
-
             // Display entry with index, player name, turn number, and relative time
             $renderer->renderLine("{$index}. {$save['player_name']} - Turn: {$save['turn']} - Saved: {$relativeTime}");
             $index++;

@@ -38,6 +38,11 @@ class GameEngine
     private bool $running = true;
 
     /**
+     * @var string|null Stores the result of the last action for rendering in the next loop
+     */
+    private ?string $lastActionResult = null;
+
+    /**
      * Constructor.
      *
      * Initializes the GameEngine with required dependencies and sets the initial game state to the Menu.
@@ -69,32 +74,49 @@ class GameEngine
      */
     public function run(): void
     {
-        // Clear console and show welcome message
         $this->renderer->clear();
         $this->renderer->renderWelcome();
 
+        // Main game loop
         while ($this->running) {
             try {
-                // Render the current state with the renderer and current game instance
-                $this->currentState->render($this->renderer, $this->game);
+                // Render the current state with any action result from the previous iteration
+                $this->currentState->render($this->renderer, $this->game, $this->lastActionResult);
 
-                // Read user input
-                $input = $this->inputParser->getInput();
+                // Clear the action result after rendering
+                $this->lastActionResult = null;
 
-                // Parse input into a command (if any) according to the current state
-                $command = $this->currentState->parseInput($input, $this->inputParser);
+                // Get player input
+                $this->renderer->renderPrompt($this->currentState);
+                $input = trim(fgets(STDIN));
 
-                // Execute the command if one was parsed
-                if ($command !== null) {
-                    $this->executeCommand($command);
+                // Skip empty input
+                if (empty($input)) {
+                    continue;
                 }
 
-                // Check if current state wants to transition to a new state
+                // Parse input to command
+                $command = $this->currentState->parseInput($input, $this->inputParser);
+
+                // If no command was produced but we're not in menu/load states, show error
+                if ($command === null) {
+                    if (!($this->currentState instanceof MenuState) &&
+                        !($this->currentState instanceof LoadGameState)) {
+                        $this->lastActionResult = "Unknown command. Type 'help' for available commands.";
+                    }
+                    // Continue the loop without executing a command
+                    continue;
+                }
+
+                // Execute the command if it's not null
+                $this->executeCommand($command);
+
+                // Check for state transitions
                 $this->checkStateTransitions();
 
             } catch (\Exception $e) {
-                // Catch exceptions and display error messages without exiting
-                $this->renderer->renderError($e->getMessage());
+                // Handle any exceptions and store the error message
+                $this->lastActionResult = "Error: " . $e->getMessage();
             }
         }
 
@@ -110,49 +132,78 @@ class GameEngine
      */
     private function executeCommand(CommandInterface $command): void
     {
+        // Special handling for menu transition command
+        if ($command->getName() === "menu_transition") {
+            // Do nothing - the transition will be handled in checkStateTransitions()
+            return;
+        }
+
         // Special handling for commands that don't require an active game
         // or that might create/load a game
         if ($command instanceof StartGameCommand) {
             $this->startNewGame($command->getPlayerName(), $command->getDifficulty());
-            $this->renderer->renderSuccess("New game started for " . $command->getPlayerName());
             return;
         }
 
         if ($command instanceof LoadGameCommand) {
-            $this->loadGame($command->getSaveId());
-            $this->renderer->renderSuccess("Game loaded.");
+            try {
+                $this->loadGame($command->getSaveId());
+            } catch (\Exception $e) {
+                $this->renderer->renderError("Failed to load game: " . $e->getMessage());
+            }
             return;
         }
 
         if ($command instanceof QuitCommand) {
-
             // Execute the quit command regardless of game state
             $result = $this->commandHandler->handle($command, $this->game);
-
             if ($result->hasMessage()) {
                 $this->renderer->renderMessage($result->getMessage());
             }
-
             // Set game to null to ensure we're completely resetting
             $this->game = null;
-
-            // Always transition to menu state on quit
-            $this->transitionTo($this->stateFactory->createMenuState($this));
-
+            // Signal to exit the main loop
+            $this->quit();
             return;
         }
+
         // For all other commands that require an active game
         if ($this->game === null) {
-            throw new \RuntimeException("No active game to execute this command.");
+            $this->renderer->renderError("No active game to execute this command.");
+            return;
+        }
+
+        // Special handling for map command
+        if ($command instanceof MapCommand) {
+            $result = $this->commandHandler->handle($command, $this->game);
+            if ($result->isSuccess()) {
+                // Clear screen and show the map
+                $this->renderer->clear();
+                $this->renderer->renderLine($result->getMessage());
+                // Wait for user to press Enter to continue
+                echo "Press Enter to continue...";
+                fgets(STDIN);
+
+                // Store the result message to be rendered in the next loop iteration
+                // but DON'T render here
+            } else {
+                // Store the error message to be rendered in the next loop iteration
+                // but DON'T render here
+                $this->lastActionResult = $result->getMessage();
+            }
+            return;
         }
 
         // Execute the command with the current game
         $result = $this->commandHandler->handle($command, $this->game);
 
+        // Store the message for the next rendering cycle
+        // but DON'T render here directly
         if ($result->hasMessage()) {
-            $this->renderer->renderMessage($result->getMessage());
+            $this->lastActionResult = $result->getMessage();
         }
 
+        // Handle state transitions if needed
         if ($result->requiresStateChange()) {
             $this->transitionTo($result->getNewState());
         }
