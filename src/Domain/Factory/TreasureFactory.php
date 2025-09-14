@@ -28,7 +28,7 @@ final class TreasureFactory
      * - name: string
      * - value: int
      */
-    private const TREASURE_DEFINITIONS = [
+    private const array TREASURE_DEFINITIONS = [
         'common' => [
             ['type' => TreasureType::GOLD, 'name' => 'Copper Coins', 'value' => 5],
             ['type' => TreasureType::GOLD, 'name' => 'Small Gold Pile', 'value' => 10],

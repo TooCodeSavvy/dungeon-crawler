@@ -238,50 +238,6 @@ class Dungeon
         ];
     }
 
-    /**
-     * Generates an ASCII map of the dungeon for display.
-     *
-     * @param Position|null $playerPosition Current player position to highlight
-     * @return string ASCII representation of the dungeon
-     */
-    public function getAsciiMap(?Position $playerPosition = null): string
-    {
-        $map = [];
-
-        for ($y = 0; $y < $this->height; $y++) {
-            $row = [];
-            for ($x = 0; $x < $this->width; $x++) {
-                $position = new Position($x, $y);
-                $room = $this->getRoomAt($position);
-
-                if ($room === null) {
-                    $row[] = '   '; // Empty space
-                } elseif ($playerPosition && $position->equals($playerPosition)) {
-                    $row[] = '[P]'; // Player position
-                } elseif ($position->equals($this->exitPosition)) {
-                    $row[] = '[E]'; // Exit
-                } elseif ($position->equals($this->entrancePosition)) {
-                    $row[] = '[S]'; // Start
-                } elseif ($room->isVisited()) {
-                    if ($room->hasMonster()) {
-                        $row[] = '[M]'; // Visited room with monster
-                    } elseif ($room->hasTreasure()) {
-                        $row[] = '[T]'; // Visited room with treasure
-                    } else {
-                        $row[] = '[.]'; // Visited empty room
-                    }
-                } else {
-                    $row[] = '[?]'; // Unvisited room
-                }
-            }
-            $map[] = implode(' ', $row);
-        }
-
-        return implode("\n", $map);
-    }
-
-    // Getters
-
     public function getId(): UuidInterface
     {
         return $this->id;

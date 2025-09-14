@@ -67,6 +67,16 @@ class Player
     private int $experiencePoints = 0;
 
     /**
+     * @var Treasure|null Currently equipped weapon
+     */
+    private ?Treasure $equippedWeapon = null;
+
+    /**
+     * @var int Bonus attack power from equipped weapon
+     */
+    private int $weaponAttackBonus = 0;
+
+    /**
      * Player constructor.
      *
      * @param string  $name Player name; must not be empty.
@@ -114,6 +124,31 @@ class Player
         return new self($name, $defaultHealth, $defaultPosition, $defaultAttackPower);
     }
 
+
+    /**
+     * Gets the player's current attack power including weapon bonus.
+     */
+    public function getAttackPower(): int
+    {
+        return $this->attackPower + $this->weaponAttackBonus;
+    }
+
+    /**
+     * Equips a weapon, providing an attack bonus.
+     */
+    public function equipWeapon(Treasure $weapon, int $attackBonus): void
+    {
+        $this->equippedWeapon = $weapon;
+        $this->weaponAttackBonus = $attackBonus;
+    }
+
+    /**
+     * Gets the currently equipped weapon.
+     */
+    public function getEquippedWeapon(): ?Treasure
+    {
+        return $this->equippedWeapon;
+    }
 
     /**
      * Gets the player's inventory.
@@ -273,15 +308,15 @@ class Player
 
     /**
      * Perform an attack and return the damage value.
-     *
-     * Damage is randomized with a 20% variance for combat unpredictability.
+     * Uses the total attack power including weapon bonus.
      *
      * @return int Damage dealt by the player.
      */
     public function attack(): int
     {
-        $variance = (int) ($this->attackPower * 0.2);
-        return rand($this->attackPower - $variance, $this->attackPower + $variance);
+        $totalAttackPower = $this->getAttackPower();
+        $variance = (int) ($totalAttackPower * 0.2);
+        return rand($totalAttackPower - $variance, $totalAttackPower + $variance);
     }
 
     /**
@@ -338,16 +373,6 @@ class Player
     public function getPosition(): Position
     {
         return $this->position;
-    }
-
-    /**
-     * Get the player's base attack power.
-     *
-     * @return int
-     */
-    public function getAttackPower(): int
-    {
-        return $this->attackPower;
     }
 
     /**

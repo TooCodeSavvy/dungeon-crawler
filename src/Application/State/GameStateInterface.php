@@ -20,8 +20,9 @@ interface GameStateInterface
      * @param ConsoleRenderer $renderer The renderer to use.
      * @param Game|null $game The current game instance, if any.
      * @param string|null $actionResult Optional result from the last action to display.
+     * @param bool $showMiniMap Whether to show the mini-map.
      */
-    public function render(ConsoleRenderer $renderer, ?Game $game, ?string $actionResult = null): void;
+    public function render(ConsoleRenderer $renderer, ?Game $game, ?string $actionResult = null, bool $showMiniMap = false): void;
 
     /**
      * Parses user input according to the rules of this state.

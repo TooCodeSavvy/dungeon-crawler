@@ -56,11 +56,17 @@ class PlayingState implements GameStateInterface
      *
      * @param ConsoleRenderer $renderer Renderer for outputting game information to the console.
      * @param Game|null $game Current game instance, cannot be null in playing state.
-     * @param string|null $actionResult Optional result from the last action to display
+     * @param string|null $actionResult Optional result from the last action to display.
+     * @param bool $showMap Whether to show the dungeon map.
      *
      * @throws \RuntimeException If no game is loaded when rendering.
      */
-    public function render(ConsoleRenderer $renderer, ?Game $game, ?string $actionResult = null): void
+    public function render(
+        ConsoleRenderer $renderer,
+        ?Game $game,
+        ?string $actionResult = null,
+        bool $showMap = true
+    ): void
     {
         if ($game === null) {
             throw new \RuntimeException('No game in playing state');
@@ -74,6 +80,9 @@ class PlayingState implements GameStateInterface
         if ($actionResult !== null && trim($actionResult) !== '') {
             $renderer->renderActionResult($actionResult);
         }
+
+        // Always show the map regardless of the showMap parameter
+        $renderer->renderAutoMap($game);
 
         $renderer->renderAvailableActions($this->getAvailableActions($game));
     }
@@ -108,6 +117,7 @@ class PlayingState implements GameStateInterface
             'attack', 'fight' => new AttackCommand($parsed['target'] ?? null, $this->combatService),
             'take', 'get' => new TakeCommand($parsed['item'] ?? 'all'),
             'use', 'consume' => new UseCommand($parsed['item'] ?? ''),
+            'equip', 'wear' => new EquipCommand($parsed['item'] ?? ''),
             'save' => new SaveCommand($parsed['as'] ?? false), // Check for "as" flag
             'quit' => new QuitCommand(),
             'help' => new HelpCommand(),

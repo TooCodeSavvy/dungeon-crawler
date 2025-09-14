@@ -6,7 +6,6 @@ namespace DungeonCrawler\Domain\Service;
 use DungeonCrawler\Domain\Entity\Dungeon;
 use DungeonCrawler\Domain\Entity\Monster;
 use DungeonCrawler\Domain\Entity\Room;
-use DungeonCrawler\Domain\Entity\Treasure;
 use DungeonCrawler\Domain\Factory\MonsterFactory;
 use DungeonCrawler\Domain\Factory\TreasureFactory;
 use DungeonCrawler\Domain\ValueObject\Direction;

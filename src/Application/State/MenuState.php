@@ -27,11 +27,12 @@ class MenuState implements GameStateInterface
     /**
      * Render the menu state, which displays available options for the player.
      *
-     * @param ConsoleRenderer $renderer Renderer for outputting game information to the console.
-     * @param Game|null $game Current game instance, not used in menu state.
-     * @param string|null $actionResult Optional result from the last action to display.
+     * @param ConsoleRenderer $renderer
+     * @param Game|null $game
+     * @param string|null $actionResult
+     * @param bool $showMiniMap
      */
-    public function render(ConsoleRenderer $renderer, ?Game $game, ?string $actionResult = null): void
+    public function render(ConsoleRenderer $renderer, ?Game $game, ?string $actionResult = null, bool $showMiniMap = false): void
     {
         // Skip rendering if we're transitioning to another state
         if ($this->transitionPending) {
