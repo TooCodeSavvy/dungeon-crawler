@@ -32,7 +32,9 @@ class MapCommand implements CommandInterface
             // Return a result with the map as the message
             return new CommandResult(
                 true,
-                "Current Dungeon Map:\n" . $map
+                "Current Dungeon Map:\n" .
+                "Legend: [P] Player | [X] Exit | [·] Unexplored | [O] Explored | [M] Monster | [T] Treasure\n\n" .
+                $map
             );
         } catch (\Exception $e) {
             return new CommandResult(false, "Failed to generate map: " . $e->getMessage());
@@ -47,8 +49,8 @@ class MapCommand implements CommandInterface
      */
     public function canExecute(?Game $game): bool
     {
-        // Map can always be viewed in normal gameplay
-        return true;
+        // Map can always be viewed as long as there's a game
+        return $game !== null;
     }
 
     /**
@@ -62,7 +64,7 @@ class MapCommand implements CommandInterface
     }
 
     /**
-     * Generates a simple ASCII representation of the dungeon map.
+     * Generates a colorized ASCII representation of the dungeon map.
      *
      * @param Game $game The current game instance.
      * @return string The ASCII map visualization.
@@ -73,9 +75,17 @@ class MapCommand implements CommandInterface
         $currentPosition = $game->getCurrentPosition();
         $width = $dungeon->getWidth();
         $height = $dungeon->getHeight();
-
         $map = '';
-        $legend = "Legend: [P] Player | [X] Exit | [·] Unexplored | [O] Explored | [M] Monster | [T] Treasure\n\n";
+
+        // Define ANSI color codes for map elements
+        $colorPlayer = "\033[1;32m"; // Bold green
+        $colorExit = "\033[1;36m";   // Bold cyan
+        $colorMonster = "\033[1;31m"; // Bold red
+        $colorTreasure = "\033[1;33m"; // Bold yellow
+        $colorVisited = "\033[1;37m"; // Bold white
+        $colorUnexplored = "\033[0;37m"; // Gray
+        $colorAdjacent = "\033[0;36m"; // Cyan
+        $colorReset = "\033[0m";      // Reset
 
         // Build the map row by row
         for ($y = 0; $y < $height; $y++) {
@@ -94,29 +104,29 @@ class MapCommand implements CommandInterface
                 $isVisible = $room->isVisited() || $this->isAdjacentToVisitedSafe($dungeon, $position);
 
                 if (!$isVisible) {
-                    $row .= ' · ';
+                    $row .= $colorUnexplored . ' · ' . $colorReset;
                     continue;
                 }
 
-                // Determine what to display for this room
+                // Determine what to display for this room with colors
                 if ($position->equals($currentPosition)) {
-                    $row .= '[P]'; // Player position
+                    $row .= $colorPlayer . '[P]' . $colorReset; // Player position
                 } elseif ($room->isExit()) {
-                    $row .= '[X]'; // Exit
+                    $row .= $colorExit . '[X]' . $colorReset; // Exit
                 } elseif ($room->hasMonster() && $room->isVisited()) {
-                    $row .= '[M]'; // Monster (only visible if room was visited)
+                    $row .= $colorMonster . '[M]' . $colorReset; // Monster
                 } elseif ($room->hasTreasure() && $room->isVisited()) {
-                    $row .= '[T]'; // Treasure (only visible if room was visited)
+                    $row .= $colorTreasure . '[T]' . $colorReset; // Treasure
                 } elseif ($room->isVisited()) {
-                    $row .= '[O]'; // Visited room
+                    $row .= $colorVisited . '[O]' . $colorReset; // Visited room
                 } else {
-                    $row .= '[ ]'; // Adjacent but not visited
+                    $row .= $colorAdjacent . '[ ]' . $colorReset; // Adjacent but not visited
                 }
             }
             $map .= $row . "\n";
         }
 
-        return $legend . $map;
+        return $map;
     }
 
     /**
@@ -133,19 +143,15 @@ class MapCommand implements CommandInterface
     ): bool {
         // Check all adjacent positions
         $directions = Direction::cases();
-
         foreach ($directions as $direction) {
             try {
                 $adjacentPosition = $position->move($direction);
-
                 // Get the room at the adjacent position
                 $adjacentRoom = $dungeon->getRoomAt($adjacentPosition);
-
                 // Skip if no room at this adjacent position
                 if ($adjacentRoom === null) {
                     continue;
                 }
-
                 if ($adjacentRoom->isVisited()) {
                     return true;
                 }
@@ -154,7 +160,6 @@ class MapCommand implements CommandInterface
                 continue;
             }
         }
-
         return false;
     }
 }

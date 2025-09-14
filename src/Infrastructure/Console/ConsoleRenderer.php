@@ -1,11 +1,8 @@
 <?php
 declare(strict_types=1);
-
 namespace DungeonCrawler\Infrastructure\Console;
-
 use DungeonCrawler\Domain\Entity\Game;
 use DungeonCrawler\Domain\Entity\Room;
-use DungeonCrawler\Domain\Entity\Player;
 
 /**
  * Responsible for rendering game output to the console.
@@ -32,6 +29,66 @@ final class ConsoleRenderer
     public function clear(): void
     {
         echo "\033[2J\033[H";
+    }
+
+    /**
+     * Renders the complete game UI with optional action result message.
+     *
+     * @param ?Game $game The current game state
+     * @param string|null $actionResult The result of the player's last action
+     */
+    public function renderGameUI(?Game $game, ?string $actionResult = null): void
+    {
+        $this->clear();
+
+        // Only proceed with game-specific rendering if we have a game
+        if ($game === null) {
+            // Handle null game case - perhaps show a message
+            echo self::COLOR_RED . "No active game. Please start or load a game." . self::COLOR_RESET . "\n";
+            return;
+        }
+
+        $this->renderGameStatus($game);
+        $this->renderRoom($game->getCurrentRoom());
+
+        // If there's an action result, display it in a visually distinct section
+        if ($actionResult !== null && trim($actionResult) !== '') {
+            $this->renderActionResult($actionResult);
+        }
+
+        // Get available actions for the current game state
+        $actions = [
+            'move <direction>',
+            'map',
+            'inventory',
+            'attack',
+            'flee',
+            'save',
+            'quit',
+            'help'
+        ];
+
+        if ($game->getCurrentRoom()->hasTreasure()) {
+            $actions[] = 'take <item|all>';
+        }
+
+        if ($game->getCurrentRoom()->hasMonster() || $game->isPathBlocked()) {
+            $actions[] = 'attack';
+        }
+
+        $this->renderAvailableActions($actions);
+    }
+
+    /**
+     * Renders a visually distinct section for action results.
+     *
+     * @param string $result The action result message to display
+     */
+    public function renderActionResult(string $result): void
+    {
+        echo self::COLOR_BOLD . self::COLOR_YELLOW . "╔═ ACTION RESULT " . str_repeat("═", 24) . "╗" . self::COLOR_RESET . "\n";
+        echo "║ " . wordwrap($result, 38, "\n║ ") . "\n";
+        echo self::COLOR_BOLD . self::COLOR_YELLOW . "╚" . str_repeat("═", 39) . "╝" . self::COLOR_RESET . "\n\n";
     }
 
     /**
@@ -75,7 +132,6 @@ final class ConsoleRenderer
         $player = $game->getPlayer();
         $health = $player->getHealth();
         $healthBar = $this->createHealthBar($health->getValue(), $health->getMax());
-
         echo self::COLOR_BOLD . "═══════════════════════════════════════════\n" . self::COLOR_RESET;
         echo sprintf(
             "%s%s%s | HP: %s | Turn: %d | Room: %s\n",
@@ -99,14 +155,12 @@ final class ConsoleRenderer
         // Display room name in cyan with location icon
         echo self::COLOR_CYAN . "📍 " . $room->getName() . self::COLOR_RESET . "\n";
         echo $room->getDescription() . "\n\n";
-
         // If a monster is present, display its name and health bar in red
         if ($room->hasMonster()) {
             $monster = $room->getMonster();
             echo self::COLOR_RED . "⚔️  A " . $monster->getName() . " blocks your path!" . self::COLOR_RESET . "\n";
             echo $this->createHealthBar($monster->getHealth()->getValue(), $monster->getHealth()->getMax()) . "\n";
         }
-
         // If treasures are present, list them with a yellow sparkle icon
         if ($room->hasTreasure()) {
             echo self::COLOR_YELLOW . "✨ You see treasure here!" . self::COLOR_RESET . "\n";
@@ -114,12 +168,10 @@ final class ConsoleRenderer
                 echo "   • " . $treasure->getDisplayInfo() . "\n";
             }
         }
-
         // Indicate if this room is the exit in green with a door icon
         if ($room->isExit()) {
             echo self::COLOR_GREEN . "🚪 This is the exit!" . self::COLOR_RESET . "\n";
         }
-
         echo "\n";
     }
 
@@ -138,17 +190,14 @@ final class ConsoleRenderer
         $percentage = ($current / $max) * 100;
         $barLength = 20;
         $filled = (int) (($percentage / 100) * $barLength);
-
         $color = match (true) {
             $percentage > 60 => self::COLOR_GREEN,
             $percentage > 30 => self::COLOR_YELLOW,
             default => self::COLOR_RED
         };
-
         $bar = $color . str_repeat('█', $filled) .
             self::COLOR_WHITE . str_repeat('░', $barLength - $filled) .
             self::COLOR_RESET;
-
         return sprintf("%s %d/%d", $bar, $current, $max);
     }
 
@@ -222,4 +271,24 @@ final class ConsoleRenderer
         echo $text . PHP_EOL;
     }
 
+    /**
+     * Renders the dungeon map with colors and styling.
+     *
+     * @param string $mapContent The generated map content to display
+     */
+    public function renderMap(string $mapContent): void
+    {
+        $this->clear();
+
+        // Draw a styled border around the map
+        echo self::COLOR_BOLD . self::COLOR_CYAN;
+        echo "╔═══════════════ DUNGEON MAP ════════════════╗\n";
+        echo "╚═══════════════════════════════════════════╝\n";
+        echo self::COLOR_RESET;
+
+        // Display the map content
+        echo $mapContent;
+
+        echo "\n" . self::COLOR_YELLOW . "Press Enter to continue..." . self::COLOR_RESET;
+    }
 }
