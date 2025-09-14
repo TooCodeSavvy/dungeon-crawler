@@ -168,7 +168,6 @@ class AttackCommand implements CommandInterface
     public function canExecute(?Game $game): bool
     {
         if ($game === null) {
-            echo "DEBUG: Game is null in AttackCommand::canExecute\n";
             return false;
         }
 
