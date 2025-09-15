@@ -209,16 +209,6 @@ class CombatResult
     }
 
     /**
-     * Indicates whether the combat action was successful.
-     *
-     * @return bool True if successful, false otherwise.
-     */
-    public function isSuccessful(): bool
-    {
-        return $this->successful;
-    }
-
-    /**
      * Retrieves the descriptive message associated with the combat result.
      *
      * @return string The message.
@@ -228,69 +218,4 @@ class CombatResult
         return $this->message;
     }
 
-    /**
-     * Gets the amount of damage dealt in this combat action.
-     *
-     * @return int Damage dealt.
-     */
-    public function getDamage(): int
-    {
-        return $this->damage;
-    }
-
-    /**
-     * Returns experience points gained from this combat result.
-     *
-     * @return int Experience gained.
-     */
-    public function getExperienceGained(): int
-    {
-        return $this->experienceGained;
-    }
-
-    /**
-     * Checks if the combat result represents a victory.
-     *
-     * @return bool True if victory, false otherwise.
-     */
-    public function isVictory(): bool
-    {
-        return $this->victory;
-    }
-
-    /**
-     * Checks if the combat result represents a defeat.
-     *
-     * @return bool True if defeat, false otherwise.
-     */
-    public function isDefeat(): bool
-    {
-        return $this->defeat;
-    }
-
-    /**
-     * Checks if the combat action was dodged.
-     *
-     * @return bool True if dodged, false otherwise.
-     */
-    public function isDodged(): bool
-    {
-        return $this->dodged;
-    }
-
-    /**
-     * Calculates the defender's remaining health as a percentage of max health.
-     *
-     * Useful for UI health bars or other health-based logic.
-     *
-     * @return float Defender's health percentage (0-100).
-     */
-    public function getDefenderHealthPercentage(): float
-    {
-        if ($this->defenderMaxHealth === 0) {
-            return 0;
-        }
-
-        return ($this->defenderHealthRemaining / $this->defenderMaxHealth) * 100;
-    }
 }
