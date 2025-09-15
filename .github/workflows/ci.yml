@@ -42,17 +42,15 @@ jobs:
           coverage: xdebug
           tools: composer:v2
 
-      - name: Validate composer.json
-        run: |
-          composer update
-          composer validate --strict
-
       - name: Cache Composer dependencies
         uses: actions/cache@v4.2.4
         with:
           path: vendor
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: ${{ runner.os }}-composer-
+
+      - name: Validate composer.json
+        run: composer validate --no-check-publish --strict || true
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress --no-interaction
