@@ -11,7 +11,6 @@ namespace DungeonCrawler\Domain\ValueObject;
  * All methods that modify health return new instances rather than mutating state.
  *
  * @package    DungeonCrawler\Domain\ValueObject
- * @author     TooCodeSavvy
  */
 final class Health
 {

@@ -1,12 +1,13 @@
 {
     "name": "toocodesavvy/dungeon-crawler",
     "description": "Text-based dungeon crawler game",
+    "version": "1.0.0",
     "type": "project",
     "license": "GPL-3.0-or-later",
     "require": {
-        "php": "^8.4",
         "ext-json": "*",
-        "ext-mbstring": "*"
+        "ext-mbstring": "*",
+        "ramsey/uuid": "^4.9"
     },
     "require-dev": {
         "squizlabs/php_codesniffer": "^3.13.4",
@@ -17,7 +18,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Toocodesavvy\\DungeonCrawler\\": "src/"
+            "DungeonCrawler\\": "src/"
         }
     },
     "autoload-dev": {

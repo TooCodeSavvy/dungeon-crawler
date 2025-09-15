@@ -6,6 +6,7 @@ namespace Tests\Unit\Domain\ValueObject;
 
 use DungeonCrawler\Domain\ValueObject\Health;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * Unit tests for the Health value object
@@ -21,8 +22,7 @@ use PHPUnit\Framework\TestCase;
  * the life points of both players and monsters. These tests ensure
  * the reliability of combat and damage calculations.
  *
- * @covers     \DungeonCrawler\Domain\ValueObject\Health
- * @author     TooCodeSavvy
+ * @covers \DungeonCrawler\Domain\ValueObject\Health
  */
 final class HealthTest extends TestCase
 {
@@ -235,7 +235,6 @@ final class HealthTest extends TestCase
 
     /**
      * @test
-     * @dataProvider healthPercentageProvider
      *
      * Test percentage calculations with various health values
      *
@@ -248,6 +247,7 @@ final class HealthTest extends TestCase
      * @param float $expectedPercentage Expected percentage result
      * @return void
      */
+    #[DataProvider('healthPercentageProvider')]
     public function testHealthPercentageCalculations(
         int $current,
         int $max,
