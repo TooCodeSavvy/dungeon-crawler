@@ -115,13 +115,19 @@ class PlayingState implements GameStateInterface
 
         $parsed = $parser->parse($input);
 
+        // Make sure all command parameter keys exist
+        $direction = $parsed['direction'] ?? '';
+        $target = $parsed['target'] ?? null;
+        $item = $parsed['item'] ?? '';
+        $as = $parsed['as'] ?? false;
+
         return match ($parsed['command']) {
-            'move', 'go' => new MoveCommand($parsed['direction'] ?? '', $this->movementService),
-            'attack', 'fight' => new AttackCommand($parsed['target'] ?? null, $this->combatService),
-            'take', 'get' => new TakeCommand($parsed['item'] ?? 'all'),
-            'use', 'consume' => new UseCommand($parsed['item'] ?? ''),
-            'equip', 'wear' => new EquipCommand($parsed['item'] ?? ''),
-            'save' => new SaveCommand($parsed['as'] ?? false), // Check for "as" flag
+            'move', 'go' => new MoveCommand($direction, $this->movementService),
+            'attack', 'fight' => new AttackCommand($target, $this->combatService),
+            'take', 'get' => new TakeCommand($item === '' ? 'all' : $item),
+            'use', 'consume' => new UseCommand($item),
+            'equip', 'wield', 'wear' => new EquipCommand($item),
+            'save' => new SaveCommand($as),
             'quit' => new QuitCommand(),
             'help' => new HelpCommand(),
             'map' => new MapCommand(),

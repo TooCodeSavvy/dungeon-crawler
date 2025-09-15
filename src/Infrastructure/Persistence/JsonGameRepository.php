@@ -287,7 +287,7 @@ class JsonGameRepository implements GameRepositoryInterface
             $data['health']['max'] ?? 100
         );
 
-        // Create position - if not present in save data, use a default position
+        // Create position
         $position = new Position(
             $data['position']['x'] ?? 0,
             $data['position']['y'] ?? 0
@@ -296,7 +296,7 @@ class JsonGameRepository implements GameRepositoryInterface
         // Get attack power from saved data or use default
         $attackPower = $data['attack_power'] ?? 20;
 
-        // Create the player instance with all required constructor parameters
+        // Create the player instance
         $player = new Player(
             $data['name'] ?? 'Unknown',
             $health,
@@ -304,17 +304,35 @@ class JsonGameRepository implements GameRepositoryInterface
             $attackPower
         );
 
-        // Set experience points if present in save data
-        if (isset($data['experiencePoints'])) {
-            $player->gainExperience($data['experiencePoints']);
-        }
-
         // Restore inventory if present
         if (isset($data['inventory']) && is_array($data['inventory'])) {
             foreach ($data['inventory'] as $itemData) {
-                $item = $this->deserializeItem($itemData);
+                // Check item type and deserialize accordingly
+                if (isset($itemData['itemType']) && $itemData['itemType'] === 'item') {
+                    $item = $this->deserializeItem($itemData);
+                } else {
+                    $item = $this->deserializeTreasure($itemData);
+                }
                 $player->addItem($item);
             }
+        }
+
+        // Restore equipped weapon if present
+        if (isset($data['equippedWeapon']) && is_array($data['equippedWeapon'])) {
+            $weaponData = $data['equippedWeapon'];
+
+            // Check weapon type and deserialize accordingly
+            if (isset($weaponData['itemType']) && $weaponData['itemType'] === 'item') {
+                $weapon = $this->deserializeItem($weaponData);
+            } else {
+                $weapon = $this->deserializeTreasure($weaponData);
+            }
+
+            // Calculate weapon bonus based on value
+            $weaponBonus = max(2, intval($weapon->getValue() / 5));
+
+            // Equip the weapon
+            $player->equipWeapon($weapon, $weaponBonus);
         }
 
         return $player;
@@ -335,48 +353,6 @@ class JsonGameRepository implements GameRepositoryInterface
             $data['description'] ?? '',
             $data['value'] ?? 0
         );
-    }
-
-    /**
-     * Deserializes dungeon data into a Dungeon entity.
-     *
-     * @param array<string, mixed> $data
-     * @return Dungeon
-     */
-    private function deserializeDungeon(array $data): Dungeon
-    {
-        // First deserialize all rooms from the data
-        $rooms = [];
-        if (isset($data['rooms']) && is_array($data['rooms'])) {
-            foreach ($data['rooms'] as $roomData) {
-                $room = $this->deserializeRoom($roomData);
-                // Index by position string
-                $rooms[$room->getPosition()->toString()] = $room;
-            }
-        }
-
-        // Create entrance and exit positions
-        $entrancePosition = new Position(
-            $data['entrance_position']['x'],
-            $data['entrance_position']['y']
-        );
-
-        $exitPosition = new Position(
-            $data['exit_position']['x'],
-            $data['exit_position']['y']
-        );
-
-        // Create the dungeon with rooms as the first parameter
-        $dungeon = new Dungeon(
-            $rooms,  // First parameter is rooms array
-            $entrancePosition,
-            $exitPosition,
-            $data['width'] ?? 10,
-            $data['height'] ?? 10,
-            $data['difficulty'] ?? 1
-        );
-
-        return $dungeon;
     }
 
     /**
@@ -479,7 +455,27 @@ class JsonGameRepository implements GameRepositoryInterface
      */
     private function serializePlayer(Player $player): array
     {
-        $inventory = $player->getInventory();
+        $inventory = [];
+
+        // Process each inventory item based on its type
+        foreach ($player->getInventory() as $item) {
+            if ($item instanceof Treasure) {
+                $inventory[] = $this->serializeTreasure($item);
+            } elseif ($item instanceof Item) {
+                $inventory[] = $this->serializeItem($item);
+            }
+        }
+
+        // Handle equipped weapon (if any)
+        $equippedWeapon = null;
+        $weapon = $player->getEquippedWeapon();
+        if ($weapon !== null) {
+            if ($weapon instanceof Treasure) {
+                $equippedWeapon = $this->serializeTreasure($weapon);
+            } elseif ($weapon instanceof Item) {
+                $equippedWeapon = $this->serializeItem($weapon);
+            }
+        }
 
         return [
             'name' => $player->getName(),
@@ -488,10 +484,25 @@ class JsonGameRepository implements GameRepositoryInterface
                 'max' => $player->getHealth()->getMax()
             ],
             'attack_power' => $player->getAttackPower(),
-            'inventory' => is_array($inventory) ? array_map(
-                fn($item) => $this->serializeTreasure($item),
-                $inventory
-            ) : []
+            'inventory' => $inventory,
+            'equippedWeapon' => $equippedWeapon
+        ];
+    }
+
+    /**
+     * Serializes an Item entity into an array.
+     *
+     * @param Item $item Item entity instance
+     * @return array<string, mixed>
+     */
+    private function serializeItem(Item $item): array
+    {
+        return [
+            'itemType' => 'item', // Distinguish from treasures
+            'name' => $item->getName(),
+            'type' => $item->getType(),
+            'value' => $item->getValue(),
+            'description' => $item->getDescription()
         ];
     }
 

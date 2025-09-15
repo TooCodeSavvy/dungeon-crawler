@@ -3,6 +3,7 @@ declare(strict_types=1);
 namespace DungeonCrawler\Application\Command;
 
 use DungeonCrawler\Domain\Entity\Game;
+use DungeonCrawler\Domain\Entity\Item;
 use DungeonCrawler\Domain\Entity\Treasure;
 use DungeonCrawler\Domain\Entity\TreasureType;
 
@@ -47,14 +48,20 @@ class EquipCommand implements CommandInterface
 
         // Find the weapon in the inventory
         $weaponToEquip = null;
-        $itemIndex = -1;
 
-        foreach ($inventory as $index => $item) {
-            if ($item instanceof Treasure &&
-                $item->getType() === TreasureType::WEAPON &&
-                stripos($item->getName(), $this->itemName) !== false) {
+        foreach ($inventory as $item) {
+            $isWeapon = false;
+
+            // Check if it's a weapon regardless of item type
+            if ($item instanceof Treasure && $item->getType() === TreasureType::WEAPON) {
+                $isWeapon = true;
+            } elseif ($item instanceof Item && $item->getType() === 'weapon') {
+                $isWeapon = true;
+            }
+
+            // If it's a weapon and name matches search term
+            if ($isWeapon && stripos($item->getName(), $this->itemName) !== false) {
                 $weaponToEquip = $item;
-                $itemIndex = $index;
                 break;
             }
         }
@@ -68,10 +75,8 @@ class EquipCommand implements CommandInterface
         // Calculate attack bonus based on weapon value
         $attackBonus = $this->calculateWeaponBonus($weaponToEquip->getValue());
 
-        // Get currently equipped weapon for messaging
-        $oldWeapon = $player->getEquippedWeapon();
-
         // Equip the weapon
+        $oldWeapon = $player->getEquippedWeapon();
         $player->equipWeapon($weaponToEquip, $attackBonus);
 
         // Create result message
@@ -90,7 +95,7 @@ class EquipCommand implements CommandInterface
      * Checks if the command can be executed.
      *
      * @param ?Game $game Current game instance.
-     * @return bool True if the player is alive and has items.
+     * @return bool True if the player is alive and has weapons.
      */
     public function canExecute(?Game $game): bool
     {
@@ -98,14 +103,14 @@ class EquipCommand implements CommandInterface
             return false;
         }
 
-        // Player must be alive
         if (!$game->getPlayer()->isAlive()) {
             return false;
         }
 
         // Check if player has any weapons
         foreach ($game->getPlayer()->getInventory() as $item) {
-            if ($item instanceof Treasure && $item->getType() === TreasureType::WEAPON) {
+            if (($item instanceof Treasure && $item->getType() === TreasureType::WEAPON) ||
+                ($item instanceof Item && $item->getType() === 'weapon')) {
                 return true;
             }
         }
