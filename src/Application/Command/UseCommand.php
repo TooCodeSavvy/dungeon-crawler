@@ -186,6 +186,11 @@ class UseCommand implements CommandInterface
                     );
                 }
 
+            case 'weapon':
+                // Redirect weapon to equip command
+                $equipCommand = new EquipCommand($item->getName());
+                return $equipCommand->execute($game);
+
             default:
                 return CommandResult::failure(
                     sprintf("You can't use %s. It's not a usable item.", $item->getName())

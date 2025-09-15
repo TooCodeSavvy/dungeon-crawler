@@ -93,33 +93,31 @@ composer test
    composer game
    ```
 
-## 🎮 How to Play
-
-### Starting the Game
-
-```bash
-# Start a new game
-composer game
-
-# Or directly with PHP
-php src/Presentation/game.php
-```
-
 ### Commands
-
 | Command | Description | Example |
 |---------|-------------|---------|
+| **Movement Commands** | | |
 | `north`, `n` | Move north | `> north` |
 | `south`, `s` | Move south | `> south` |
 | `east`, `e` | Move east | `> east` |
 | `west`, `w` | Move west | `> west` |
+| `move <direction>` | Alternative movement command | `> move north` |
+| **Combat Commands** | | |
 | `attack`, `a` | Attack monster | `> attack` |
-| `look`, `l` | Examine current room | `> look` |
-| `inventory`, `i` | Check inventory | `> inventory` |
-| `save [name]` | Save game | `> save mysave` |
-| `load [name]` | Load game | `> load mysave` |
+| `attack <target>` | Attack specific monster | `> attack goblin` |
+| `flee` | Try to escape from combat | `> flee` |
+| **Item Commands** | | |
+| `take`, `get` | Take all items in room | `> take` |
+| `take <item>` | Take specific item | `> take potion` |
+| `use <item>` | Use consumable item | `> use health potion` |
+| `equip <weapon>` | Equip a weapon | `> equip excalibur` |
+| **Information Commands** | | | 
+| `map`, `m` | Display dungeon map | `> map` |
+| `inventory`, `i`, `inv` | Check inventory | `> inventory` |
+| **Game Management** | | |
+| `save` | Save current game | `> save` |  
 | `help`, `h` | Show help | `> help` |
-| `quit`, `q` | Exit game | `> quit` |
+| `quit`, `q`, `exit` | Exit game | `> quit` |
 
 ### Game Objectives
 
@@ -308,18 +306,18 @@ git push origin main --tags
 #### v1.0.0 - MVP (Due: Dec 15, 2024)
 - [x] Project setup and architecture
 - [x] Health value object
-- [ ] Player entity
-- [ ] Room and dungeon system
-- [ ] Basic combat
-- [ ] Save/Load functionality
-- [ ] CLI interface
+- [x] Player entity
+- [x] Room and dungeon system
+- [x] Basic combat
+- [x] Save/Load functionality
+- [x] CLI interface
 
 #### v1.1.0 - Enhancements
 - [ ] Random dungeon generation
-- [ ] Multiple monster types
-- [ ] ASCII map display
-- [ ] Colored output
-- [ ] Item system
+- [x] Multiple monster types
+- [x] ASCII map display
+- [x] Colored output
+- [x] Item system
 
 #### v2.0.0 - Advanced Features
 - [ ] Character classes
@@ -327,17 +325,6 @@ git push origin main --tags
 - [ ] Procedural generation
 - [ ] Difficulty levels
 - [ ] Achievements
-
-## 📈 Metrics
-
-```bash
-# Generate metrics
-composer metrics
-
-# View test coverage
-composer test-coverage
-open coverage/index.html
-```
 
 ## 🐛 Troubleshooting
 

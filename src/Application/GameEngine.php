@@ -101,7 +101,18 @@ class GameEngine
 
                 // Get player input
                 $this->renderer->renderPrompt($this->currentState);
-                $input = trim(fgets(STDIN));
+                $input = fgets(STDIN);
+
+                // Check if input reading failed
+                if ($input === false) {
+                    // Handle error gracefully - this could happen if stdin is closed or there's an I/O error
+                    $this->lastActionResult = "Input error detected. The game will exit.";
+                    $this->quit();
+                    continue; // Skip to the next iteration, which will exit because running is now false
+                }
+
+                // Safely trim the input now that we know it's a string
+                $input = trim($input);
 
                 // Skip empty input
                 if (empty($input)) {
