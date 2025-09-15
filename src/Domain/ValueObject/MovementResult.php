@@ -81,26 +81,6 @@ class MovementResult
     }
 
     /**
-     * Checks if the movement was blocked by an entity.
-     *
-     * @return bool True if blocked by an entity
-     */
-    public function isBlocked(): bool
-    {
-        return $this->blockingEntity !== null;
-    }
-
-    /**
-     * Gets the blocking entity.
-     *
-     * @return Monster|null The blocking entity, or null if not blocked
-     */
-    public function getBlockingEntity(): ?Monster
-    {
-        return $this->blockingEntity;
-    }
-
-    /**
      * Gets information about the new location.
      *
      * @return LocationInfo|null Location info, or null if movement failed

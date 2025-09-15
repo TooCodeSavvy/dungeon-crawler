@@ -83,22 +83,4 @@ class InputParser
         };
     }
 
-    /**
-     * Gets a line of input from the user.
-     *
-     * @param string $prompt Optional prompt to display
-     * @return string The user's input
-     */
-    public function getInput(string $prompt = '> '): string
-    {
-        echo $prompt;
-        $input = fgets(STDIN);
-
-        if ($input === false) {
-            // Handle EOF or error
-            return '';
-        }
-
-        return $input;
-    }
 }

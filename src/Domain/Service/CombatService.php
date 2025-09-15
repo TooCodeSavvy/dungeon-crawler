@@ -168,41 +168,6 @@ class CombatService
     }
 
     /**
-     * Simulates a full combat round consisting of the player's attack and the monster's counter-attack if still alive.
-     *
-     * This method orchestrates the flow of a typical combat exchange in a turn-based game:
-     * the player attacks first; if the monster survives, it attacks back.
-     * The method aggregates all combat actions into a CombatRound object to summarize the round.
-     *
-     * @param Player $player The player initiating the round
-     * @param Monster $monster The monster defending and possibly counter-attacking
-     *
-     * @return CombatRound The combined result of all actions in the combat round
-     */
-    public function executeRound(Player $player, Monster $monster): CombatRound
-    {
-        $actions = [];
-
-        // Player attacks first, result saved
-        $playerAttackResult = $this->playerAttack($player, $monster);
-        $actions[] = $playerAttackResult;
-
-        // If monster still alive and player still alive, monster retaliates
-        if ($monster->isAlive() && $player->isAlive() && !$playerAttackResult->isVictory()) {
-            $monsterAttackResult = $this->monsterAttack($monster, $player);
-            $actions[] = $monsterAttackResult;
-        }
-
-        // Return summary of combat round, including updated health states and whether combat ended
-        return new CombatRound(
-            actions: $actions,
-            playerHealth: $player->getHealth(),
-            monsterHealth: $monster->getHealth(),
-            combatEnded: !$player->isAlive() || !$monster->isAlive()
-        );
-    }
-
-    /**
      * Calculates if the player can successfully flee from combat.
      *
      * The flee chance is influenced by both the player's and monster's current health percentages,
@@ -241,30 +206,6 @@ class CombatService
         return FleeResult::failure(
             'You fail to escape! The ' . $monster->getName() . ' blocks your path!',
             $punishment
-        );
-    }
-
-    /**
-     * Provides a snapshot of current combat statistics for display or UI purposes.
-     *
-     * Collects key player and monster stats such as names, health, attack power,
-     * and experience rewards, to give an overview of the combatants' status.
-     *
-     * @param Player $player The player involved in combat
-     * @param Monster $monster The monster involved in combat
-     *
-     * @return CombatStats Statistics object summarizing combat details
-     */
-    public function getCombatStats(Player $player, Monster $monster): CombatStats
-    {
-        return new CombatStats(
-            playerName: $player->getName(),
-            playerHealth: $player->getHealth(),
-            playerAttackPower: $player->getAttackPower(),
-            monsterName: $monster->getName(),
-            monsterHealth: $monster->getHealth(),
-            monsterAttackPower: $monster->getAttackPower(),
-            monsterExperienceReward: $monster->getExperienceReward()
         );
     }
 

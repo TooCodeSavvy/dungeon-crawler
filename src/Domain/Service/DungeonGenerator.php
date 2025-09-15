@@ -124,76 +124,6 @@ class DungeonGenerator
     }
 
     /**
-     * Generates a simple 3x3 pre-designed dungeon
-     *
-     * Layout:
-     * [S]---[M]---[.]
-     *  |           |
-     * [T]     X   [.]
-     *  |           |
-     * [.]---[M]---[E]
-     *
-     * S = Start, E = Exit, M = Monster, T = Treasure, . = Empty, X = No room
-     *
-     * @return Dungeon A simple fixed dungeon
-     */
-    public function generateSimple(): Dungeon
-    {
-        $this->rooms = [];
-
-        // Create a simple 3x3 dungeon with a gap in the middle
-        $layout = [
-            [1, 1, 1],
-            [1, 0, 1],
-            [1, 1, 1],
-        ];
-
-        for ($y = 0; $y < 3; $y++) {
-            for ($x = 0; $x < 3; $x++) {
-                if ($layout[$y][$x] === 1) {
-                    $position = new Position($x, $y);
-                    $this->rooms[$position->toString()] = new Room(
-                        position: $position,
-                        description: $this->generateRoomDescription($x, $y)
-                    );
-                }
-            }
-        }
-
-        // Connect the rooms manually for predictable layout
-        $this->connectSimpleLayout();
-
-        // Set entrance at top-left, exit at bottom-right
-        $this->entrancePosition = new Position(0, 0);
-        $this->exitPosition = new Position(2, 2);
-
-        // Replace exit room with special exit room
-        $this->rooms[$this->exitPosition->toString()] = new Room(
-            position: $this->exitPosition,
-            description: 'The exit chamber! A bright light shines from the doorway ahead.',
-            monster: null,
-            treasure: null,
-            isExit: true
-        );
-
-        // Restore connections for exit room
-        $this->rooms['[2,2]']->connectTo(Direction::WEST);
-        $this->rooms['[2,2]']->connectTo(Direction::NORTH);
-
-        // Add predetermined content
-        $this->addSimpleContent();
-
-        return new Dungeon(
-            rooms: $this->rooms,
-            entrancePosition: $this->entrancePosition,
-            exitPosition: $this->exitPosition,
-            width: 3,
-            height: 3,
-            difficulty: 1
-        );
-    }
-
-    /**
      * Validates generation parameters.
      */
     private function validateParameters(
@@ -341,32 +271,6 @@ class DungeonGenerator
     }
 
     /**
-     * Manually connects rooms in the simple layout.
-     */
-    private function connectSimpleLayout(): void
-    {
-        // Manually connect the simple 3x3 layout
-        $connections = [
-            '[0,0]' => [Direction::EAST, Direction::SOUTH],
-            '[1,0]' => [Direction::WEST, Direction::EAST],
-            '[2,0]' => [Direction::WEST, Direction::SOUTH],
-            '[0,1]' => [Direction::NORTH, Direction::SOUTH],
-            '[2,1]' => [Direction::NORTH, Direction::SOUTH],
-            '[0,2]' => [Direction::NORTH, Direction::EAST],
-            '[1,2]' => [Direction::WEST, Direction::EAST],
-            '[2,2]' => [Direction::WEST, Direction::NORTH],
-        ];
-
-        foreach ($connections as $posStr => $directions) {
-            if (isset($this->rooms[$posStr])) {
-                foreach ($directions as $direction) {
-                    $this->rooms[$posStr]->connectTo($direction);
-                }
-            }
-        }
-    }
-
-    /**
      * Places entrance and exit rooms at strategic positions.
      */
     private function placeEntranceAndExit(int $width, int $height): void
@@ -494,57 +398,6 @@ class DungeonGenerator
                 return $this->monsterFactory->createGoblin();
             } else {
                 return $this->monsterFactory->createOrc();
-            }
-        }
-    }
-
-    /**
-     * Adds predetermined content to the simple dungeon layout.
-     */
-    private function addSimpleContent(): void
-    {
-        // Add a goblin at position [1,0]
-        if (isset($this->rooms['[1,0]'])) {
-            $room = $this->rooms['[1,0]'];
-            $this->rooms['[1,0]'] = new Room(
-                position: $room->getPosition(),
-                description: $room->getDescription(),
-                monster: $this->monsterFactory->createGoblin(),
-                treasure: null,
-                isExit: false
-            );
-            foreach ($room->getAvailableDirections() as $dir) {
-                $this->rooms['[1,0]']->connectTo($dir);
-            }
-        }
-
-        // Add treasure at position [0,1]
-        if (isset($this->rooms['[0,1]'])) {
-            $room = $this->rooms['[0,1]'];
-            $this->rooms['[0,1]'] = new Room(
-                position: $room->getPosition(),
-                description: $room->getDescription(),
-                monster: null,
-                treasure: $this->treasureFactory->createByRarity('common'),
-                isExit: false
-            );
-            foreach ($room->getAvailableDirections() as $dir) {
-                $this->rooms['[0,1]']->connectTo($dir);
-            }
-        }
-
-        // Add an orc with treasure at position [1,2]
-        if (isset($this->rooms['[1,2]'])) {
-            $room = $this->rooms['[1,2]'];
-            $this->rooms['[1,2]'] = new Room(
-                position: $room->getPosition(),
-                description: $room->getDescription(),
-                monster: $this->monsterFactory->createOrc(),
-                treasure: $this->treasureFactory->createByRarity('uncommon'),
-                isExit: false
-            );
-            foreach ($room->getAvailableDirections() as $dir) {
-                $this->rooms['[1,2]']->connectTo($dir);
             }
         }
     }
