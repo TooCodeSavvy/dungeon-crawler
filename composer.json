@@ -1,6 +1,7 @@
 {
     "name": "toocodesavvy/dungeon-crawler",
     "description": "Text-based dungeon crawler game",
+    "version": "1.0.0",
     "type": "project",
     "license": "GPL-3.0-or-later",
     "require": {
