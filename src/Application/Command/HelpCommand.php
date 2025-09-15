@@ -18,22 +18,42 @@ class HelpCommand implements CommandInterface
      */
     public function execute(?Game $game): CommandResult
     {
-        $helpText = "Available Commands:\n" .
-            "------------------\n" .
-            "move <direction> - Move in the specified direction (north/n, south/s, east/e, west/w)\n" .
-            "  Example: \"move north\" or just \"n\"\n" .
-            "map - Display a map of the dungeon showing explored areas\n" .
-            "inventory - View your current inventory items\n" .
-            "take <item|all> - Pick up an item from the current room\n" .
-            "  Example: \"take sword\" or \"take all\"\n" .
-            "use <item> - Use an item from your inventory\n" .
-            "  Example: \"use potion\" or \"use health potion\"\n" .
-            "attack - Attack a monster in the current room (if present)\n" .
-            "save - Update your current save file\n" .
-            "save as - Create a new save file\n" .
-            "quit - Return to the main menu\n" .
-            "help - Display this help information\n
-        ";
+        $helpText = <<<EOT
+DUNGEON CRAWLER - COMMAND REFERENCE
+
+MOVEMENT:
+- north, n       Move north
+- south, s       Move south
+- east, e        Move east
+- west, w        Move west
+- move <dir>     Alternative movement command
+
+COMBAT:
+- attack         Attack a monster 
+- flee           Try to escape from combat
+
+ITEMS:
+- take           Take all items in room
+- take <item>    Take specific item
+- use <item>     Use potion or equip weapon
+- equip <weapon> Equip a weapon directly
+
+INFO:
+- map, m         Show dungeon map
+- inventory, i   Check your inventory 
+
+GAME:
+- save           Save current game 
+- quit, q        Exit game
+- help, h        Show this help
+
+TIPS:
+• Find better weapons to increase attack power
+• Use health potions when injured
+• Save your game often
+• Defeat monsters blocking your path
+• Find the exit to win!
+EOT;
 
         return new CommandResult(true, $helpText);
     }
