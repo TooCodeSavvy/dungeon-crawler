@@ -67,9 +67,9 @@ class Player
     private int $experiencePoints = 0;
 
     /**
-     * @var Treasure|null Currently equipped weapon
+     * @var object|null Currently equipped weapon (can be Treasure or Item)
      */
-    private ?Treasure $equippedWeapon = null;
+    private ?object $equippedWeapon = null;
 
     /**
      * @var int Bonus attack power from equipped weapon
@@ -135,8 +135,11 @@ class Player
 
     /**
      * Equips a weapon, providing an attack bonus.
+     *
+     * @param object $weapon The weapon to equip (Treasure or Item)
+     * @param int $attackBonus The attack bonus provided by this weapon
      */
-    public function equipWeapon(Treasure $weapon, int $attackBonus): void
+    public function equipWeapon(object $weapon, int $attackBonus): void
     {
         $this->equippedWeapon = $weapon;
         $this->weaponAttackBonus = $attackBonus;
@@ -144,8 +147,10 @@ class Player
 
     /**
      * Gets the currently equipped weapon.
+     *
+     * @return object|null The equipped weapon or null if none
      */
-    public function getEquippedWeapon(): ?Treasure
+    public function getEquippedWeapon(): ?object
     {
         return $this->equippedWeapon;
     }

@@ -125,7 +125,7 @@ class GameOverState implements GameStateInterface
         $input = strtolower(trim($input));
 
         return match($input) {
-            'new', 'start', 'play' => new StartGameCommand(),
+            'new', 'start', 'play' => new StartGameCommand('Player', 'normal'),
             'quit', 'exit', 'q' => new QuitCommand(),
             default => null
         };

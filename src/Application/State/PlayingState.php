@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace DungeonCrawler\Application\State;
 
 use DungeonCrawler\Application\Command\CommandInterface;
+use DungeonCrawler\Application\Command\EquipCommand;
 use DungeonCrawler\Application\Command\MoveCommand;
 use DungeonCrawler\Application\Command\AttackCommand;
 use DungeonCrawler\Application\Command\TakeCommand;
@@ -15,6 +16,8 @@ use DungeonCrawler\Application\Command\InventoryCommand;
 use DungeonCrawler\Application\Command\UseCommand;
 use DungeonCrawler\Application\GameEngine;
 use DungeonCrawler\Domain\Entity\Game;
+use DungeonCrawler\Domain\Entity\Treasure;
+use DungeonCrawler\Domain\Entity\TreasureType;
 use DungeonCrawler\Domain\Service\CombatService;
 use DungeonCrawler\Domain\Service\MovementService;
 use DungeonCrawler\Infrastructure\Console\ConsoleRenderer;
@@ -112,13 +115,19 @@ class PlayingState implements GameStateInterface
 
         $parsed = $parser->parse($input);
 
+        // Make sure all command parameter keys exist
+        $direction = $parsed['direction'] ?? '';
+        $target = $parsed['target'] ?? null;
+        $item = $parsed['item'] ?? '';
+        $as = $parsed['as'] ?? false;
+
         return match ($parsed['command']) {
-            'move', 'go' => new MoveCommand($parsed['direction'] ?? '', $this->movementService),
-            'attack', 'fight' => new AttackCommand($parsed['target'] ?? null, $this->combatService),
-            'take', 'get' => new TakeCommand($parsed['item'] ?? 'all'),
-            'use', 'consume' => new UseCommand($parsed['item'] ?? ''),
-            'equip', 'wear' => new EquipCommand($parsed['item'] ?? ''),
-            'save' => new SaveCommand($parsed['as'] ?? false), // Check for "as" flag
+            'move', 'go' => new MoveCommand($direction, $this->movementService),
+            'attack', 'fight' => new AttackCommand($target, $this->combatService),
+            'take', 'get' => new TakeCommand($item === '' ? 'all' : $item),
+            'use', 'consume' => new UseCommand($item),
+            'equip', 'wield', 'wear' => new EquipCommand($item),
+            'save' => new SaveCommand($as),
             'quit' => new QuitCommand(),
             'help' => new HelpCommand(),
             'map' => new MapCommand(),
@@ -179,6 +188,24 @@ class PlayingState implements GameStateInterface
 
         if ($game->getCurrentRoom()->hasTreasure()) {
             $actions[] = 'take <item|all>';
+        }
+
+        // Check if player has any items
+        if (!empty($game->getPlayer()->getInventory())) {
+            $actions[] = 'use <item>';
+
+            // Check if player has any weapons to equip
+            $hasWeapons = false;
+            foreach ($game->getPlayer()->getInventory() as $item) {
+                if ($item instanceof Treasure && $item->getType() === TreasureType::WEAPON) {
+                    $hasWeapons = true;
+                    break;
+                }
+            }
+
+            if ($hasWeapons) {
+                $actions[] = 'equip <weapon>';
+            }
         }
 
         return $actions;
