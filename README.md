@@ -2,7 +2,8 @@
 
 [![CI Pipeline](https://github.com/TooCodeSavvy/dungeon-crawler/actions/workflows/ci.yml/badge.svg)](https://github.com/TooCodeSavvy/dungeon-crawler/actions/workflows/ci.yml)
 [![PHP Version](https://img.shields.io/badge/PHP-8.4%2B-blue.svg)](https://www.php.net/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![License](
+https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg)](LICENSE)
 [![Code Coverage](https://codecov.io/gh/TooCodeSavvy/dungeon-crawler/branch/main/graph/badge.svg)](https://codecov.io/gh/TooCodeSavvy/dungeon-crawler)
 [![PHPStan](https://img.shields.io/badge/PHPStan-level%208-brightgreen.svg)](phpstan.neon)
 
