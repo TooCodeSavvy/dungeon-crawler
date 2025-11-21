@@ -19,10 +19,13 @@ A text-based dungeon crawler game built with PHP.
   - [Project Structure](#project-structure)
   - [Git Workflow](#git-workflow)
   - [Testing](#testing)
-  - [Code Quality](#code-quality)
-- [Contributing](#-contributing)
+  - [Code Quality](#code-quality) 
 - [Architecture](#-architecture)
+  - [C4 Container Diagram](#c4-container-diagram)
+  - [Gameplay Flow Diagram](#gameplay-flow-diagram) 
 - [CI/CD Pipeline](#-cicd-pipeline)
+- [Project Status](#-project-status)
+- [Troubleshooting](#-troubleshooting)
 - [License](#-license)
 
 ## ✨ Features
@@ -216,25 +219,16 @@ composer fix
 
 ## 🏗️ Architecture
 
-### Domain-Driven Design
+This project follows Domain-Driven Design, separating business logic from infrastructure and presentation.
 
-The project follows DDD principles with clear boundaries:
+Below are two new architectural diagrams that visualize core concepts.
 
-```
-┌─────────────────────────────────────────┐
-│          Presentation Layer             │
-│         (CLI Interface)                 │
-├─────────────────────────────────────────┤
-│          Application Layer              │
-│     (Commands, State, Game Loop)       │
-├─────────────────────────────────────────┤
-│           Domain Layer                  │
-│  (Entities, Value Objects, Services)   │
-├─────────────────────────────────────────┤
-│        Infrastructure Layer             │
-│    (Persistence, External Services)    │
-└─────────────────────────────────────────┘
-```
+### C4 Container Architecture Diagram
+The diagram below illustrates how the system is structured in terms of high-level "containers":
+the CLI interface, Application layer, Domain model, and Infrastructure.
+
+![C4 Container Architecture Diagram](docs/diagrams/c4-container.png)
+
 
 ### Design Patterns Used
 
@@ -245,13 +239,19 @@ The project follows DDD principles with clear boundaries:
 - **Strategy Pattern** - Combat calculations
 - **Value Object Pattern** - Immutable domain concepts
 
-### Key Architectural Decisions
+### Gameplay Flow Diagram
 
 1. **Immutable Value Objects** - Prevent state corruption
 2. **Dependency Injection** - Testability and flexibility
 3. **Interface Segregation** - Small, focused interfaces
 4. **Domain Events** - Decoupled communication (future)
 5. **CQRS** - Separate read/write operations (future)
+
+### C4 Container Architecture Diagram
+This diagram explains the game loop: reading commands, movement, combat, using items, and winning or losing.
+
+![Gameplay Flow Diagram](docs/diagrams/gameplay-flow.png)
+
 
 ## 🔄 CI/CD Pipeline
 

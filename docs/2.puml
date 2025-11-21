@@ -1,0 +1,37 @@
+@startuml
+
+start
+:Init Game;
+:Load Save or Start New;
+:Render Room;
+
+repeat
+  :Read Player Command;
+
+  if (Movement?) then (yes)
+    :Move to New Room;
+    if (Monster Present?) then (yes)
+      :Enter Combat;
+    endif
+  endif
+
+  if (Combat?) then (yes)
+    :Player Attacks;
+    :Monster Attacks;
+    if (Player HP <= 0) then (dead)
+      stop
+    endif
+  endif
+
+  if (Take/Use/Inventory?) then (yes)
+    :Process Item Command;
+  endif
+repeat while (Game Running?)
+
+:Check Exit Room?;
+if (At Exit?) then (win)
+  :Player Wins!;
+endif
+
+stop
+@enduml

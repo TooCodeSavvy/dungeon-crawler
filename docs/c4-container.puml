@@ -1,0 +1,27 @@
+@startuml
+skinparam rectangle {
+  BackgroundColor #E8F5E9
+  BorderColor #43A047
+  RoundCorner 8
+}
+skinparam actorStyle awesome
+
+actor "Player" as User
+
+rectangle "Dungeon Crawler Game\n(System)" as System {
+
+  rectangle "CLI Interface\n(Presentation Layer)\nPHP script" as CLI #BBDEFB
+  rectangle "Application Layer\nGame Loop, Commands, State" as APP #C8E6C9
+  rectangle "Domain Layer\nEntities, Value Objects, Services" as DOMAIN #FFF9C4
+  rectangle "Infrastructure Layer\nPersistence, Console IO" as INFRA #F8BBD0
+}
+
+rectangle "Save Files\n(Filesystem)" as STORAGE #D7CCC8
+
+User --> CLI : "Issues commands"
+CLI --> APP : "Parses & sends commands"
+APP --> DOMAIN : "Executes game logic"
+APP --> INFRA : "Save/Load"
+INFRA --> STORAGE : "Read/Write save files"
+
+@enduml
