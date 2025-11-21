@@ -247,7 +247,7 @@ the CLI interface, Application layer, Domain model, and Infrastructure.
 4. **Domain Events** - Decoupled communication (future)
 5. **CQRS** - Separate read/write operations (future)
 
-### C4 Container Architecture Diagram
+### Gameplay Flow Diagram
 This diagram explains the game loop: reading commands, movement, combat, using items, and winning or losing.
 
 ![Gameplay Flow Diagram](docs/diagrams/gameplay-flow.png)
